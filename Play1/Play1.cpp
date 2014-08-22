@@ -1,48 +1,37 @@
-/*
-* Example of a Windows OpenGL program.
-* The OpenGL code is the same as that used in
-* the X Window System sample
-*/
 #include <windows.h> 
 #include <GL/gl.h> 
 #include <GL/glu.h> 
 
-/* Windows globals, defines, and prototypes */
+// Windows globals, defines, and prototypes
 WCHAR szAppName[] = L"Win OpenGL";
 HWND  ghWnd;
 HDC   ghDC;
 HGLRC ghRC;
 
-#define SWAPBUFFERS SwapBuffers(ghDC) 
-#define BLACK_INDEX     0 
-#define RED_INDEX       13 
-#define GREEN_INDEX     14 
-#define BLUE_INDEX      16 
-#define WIDTH           1200 
-#define HEIGHT          800 
+const int WIDTH = 1200;
+const int HEIGHT = 800;
 
 LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL bSetupPixelFormat(HDC);
 
-/* OpenGL globals, defines, and prototypes */
+// OpenGL globals, defines, and prototypes
 GLfloat latitude, longitude, latinc, longinc;
 GLdouble radius;
 
-#define GLOBE    1 
-#define CYLINDER 2 
-#define CONE     3 
+const int GLOBE    = 1;
+const int CYLINDER = 2;
+const int CONE     = 3;
 
 GLvoid resize(GLsizei, GLsizei);
 GLvoid initializeGL(GLsizei, GLsizei);
 GLvoid drawScene(GLvoid);
 void polarView(GLdouble, GLdouble, GLdouble, GLdouble);
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
-	MSG        msg;
-	WNDCLASS   wndclass;
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+	MSG msg;
+	WNDCLASS wndclass;
 
-	/* Register the frame class */
+	// Register the frame class
 	wndclass.style = 0;
 	wndclass.lpfnWndProc = (WNDPROC)MainWndProc;
 	wndclass.cbClsExtra = 0;
@@ -54,10 +43,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	wndclass.lpszMenuName = szAppName;
 	wndclass.lpszClassName = szAppName;
 
-	if (!RegisterClass(&wndclass))
+	if (!RegisterClass(&wndclass)) {
 		return FALSE;
+	}
 
-	/* Create the frame */
+	// Create the frame
 	ghWnd = CreateWindow(szAppName,
 		L"Generic OpenGL Sample",
 		WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
@@ -70,25 +60,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		hInstance,
 		NULL);
 
-	/* make sure window was created */
-	if (!ghWnd)
+	// make sure window was created
+	if (!ghWnd) {
 		return FALSE;
+	}
 
-	/* show and update main window */
+	// show and update main window
 	ShowWindow(ghWnd, nCmdShow);
 
 	UpdateWindow(ghWnd);
 
-	/* animation loop */
+	// animation loop
 	while (1) {
-		/*
-		*  Process all pending messages
-		*/
-
-		while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) == TRUE)
-		{
-			if (GetMessage(&msg, NULL, 0, 0))
-			{
+		// Process all pending messages
+		while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) == TRUE) {
+			if (GetMessage(&msg, NULL, 0, 0)) {
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
@@ -101,23 +87,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 }
 
-/* main window procedure */
-LONG WINAPI MainWndProc(
-	HWND    hWnd,
-	UINT    uMsg,
-	WPARAM  wParam,
-	LPARAM  lParam)
-{
-	LONG    lRet = 1;
-	PAINTSTRUCT    ps;
+// main window procedure
+LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	LONG lRet = 1;
+	PAINTSTRUCT ps;
 	RECT rect;
 
 	switch (uMsg) {
 
 	case WM_CREATE:
 		ghDC = GetDC(hWnd);
-		if (!bSetupPixelFormat(ghDC))
+		if (!bSetupPixelFormat(ghDC)) {
 			PostQuitMessage(0);
+		}
 
 		ghRC = wglCreateContext(ghDC);
 		wglMakeCurrent(ghDC, ghRC);
@@ -136,21 +118,25 @@ LONG WINAPI MainWndProc(
 		break;
 
 	case WM_CLOSE:
-		if (ghRC)
+		if (ghRC) {
 			wglDeleteContext(ghRC);
-		if (ghDC)
+			ghRC = 0;
+		}
+		if (ghDC) {
 			ReleaseDC(hWnd, ghDC);
-		ghRC = 0;
-		ghDC = 0;
+			ghDC = 0;
+		}
 
 		DestroyWindow(hWnd);
 		break;
 
 	case WM_DESTROY:
-		if (ghRC)
+		if (ghRC) {
 			wglDeleteContext(ghRC);
-		if (ghDC)
+		}
+		if (ghDC) {
 			ReleaseDC(hWnd, ghDC);
+		}
 
 		PostQuitMessage(0);
 		break;
@@ -160,12 +146,15 @@ LONG WINAPI MainWndProc(
 		case VK_LEFT:
 			longinc += 0.5F;
 			break;
+
 		case VK_RIGHT:
 			longinc -= 0.5F;
 			break;
+
 		case VK_UP:
 			latinc += 0.5F;
 			break;
+
 		case VK_DOWN:
 			latinc -= 0.5F;
 			break;
@@ -188,8 +177,7 @@ BOOL bSetupPixelFormat(HDC hdc)
 
 	ppfd->nSize = sizeof(PIXELFORMATDESCRIPTOR);
 	ppfd->nVersion = 1;
-	ppfd->dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |
-		PFD_DOUBLEBUFFER;
+	ppfd->dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
 	ppfd->dwLayerMask = PFD_MAIN_PLANE;
 	ppfd->iPixelType = PFD_TYPE_COLORINDEX;
 	ppfd->cColorBits = 8;
@@ -199,14 +187,12 @@ BOOL bSetupPixelFormat(HDC hdc)
 
 	pixelformat = ChoosePixelFormat(hdc, ppfd);
 
-	if ((pixelformat = ChoosePixelFormat(hdc, ppfd)) == 0)
-	{
+	if ((pixelformat = ChoosePixelFormat(hdc, ppfd)) == 0) {
 		MessageBox(NULL, L"ChoosePixelFormat failed", L"Error", MB_OK);
 		return FALSE;
 	}
 
-	if (SetPixelFormat(hdc, pixelformat, ppfd) == FALSE)
-	{
+	if (!SetPixelFormat(hdc, pixelformat, ppfd)) {
 		MessageBox(NULL, L"SetPixelFormat failed", L"Error", MB_OK);
 		return FALSE;
 	}
@@ -214,10 +200,9 @@ BOOL bSetupPixelFormat(HDC hdc)
 	return TRUE;
 }
 
-/* OpenGL code */
+// OpenGL code
 
-GLvoid resize(GLsizei width, GLsizei height)
-{
+GLvoid resize(GLsizei width, GLsizei height) {
 	GLfloat aspect;
 
 	glViewport(0, 0, width, height);
@@ -230,9 +215,8 @@ GLvoid resize(GLsizei width, GLsizei height)
 	glMatrixMode(GL_MODELVIEW);
 }
 
-GLvoid createObjects()
-{
-	GLUquadricObj *quadObj;
+GLvoid createObjects() {
+	GLUquadricObj* quadObj;
 
 	glNewList(GLOBE, GL_COMPILE);
 	quadObj = gluNewQuadric();
@@ -259,13 +243,11 @@ GLvoid createObjects()
 	glEndList();
 }
 
-GLvoid initializeGL(GLsizei width, GLsizei height)
-{
-	GLfloat     maxObjectSize, aspect;
-	GLdouble    near_plane, far_plane;
+GLvoid initializeGL(GLsizei width, GLsizei height) {
+	GLfloat maxObjectSize, aspect;
+	GLdouble near_plane, far_plane;
 
-	glClearIndex((GLfloat)BLACK_INDEX);
-	glClearDepth(1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -287,18 +269,14 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
 	createObjects();
 }
 
-void polarView(GLdouble radius, GLdouble twist, GLdouble latitude,
-	GLdouble longitude)
-{
+void polarView(GLdouble radius, GLdouble twist, GLdouble latitude, GLdouble longitude) {
 	glTranslated(0.0, 0.0, -radius);
 	glRotated(-twist, 0.0, 0.0, 1.0);
 	glRotated(-latitude, 1.0, 0.0, 0.0);
 	glRotated(longitude, 0.0, 0.0, 1.0);
-
 }
 
-GLvoid drawScene(GLvoid)
-{
+GLvoid drawScene(GLvoid) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glEnable(GL_BLEND);
@@ -311,15 +289,12 @@ GLvoid drawScene(GLvoid)
 
 	polarView(radius, 0, latitude, longitude);
 
-	//glIndexi(RED_INDEX);
 	glColor4f(1, 0, 0, 0.5);
 	glCallList(CONE);
 
-	//glIndexi(BLUE_INDEX);
 	glColor4f(0, 0, 1, 0.5);
 	glCallList(GLOBE);
 
-	//glIndexi(GREEN_INDEX);
 	glColor4f(0, 1, 0, 0.5);
 	glPushMatrix();
 	glTranslatef(0.8F, -0.65F, 0.0F);
@@ -331,5 +306,5 @@ GLvoid drawScene(GLvoid)
 
 	glDisable(GL_BLEND);
 
-	SWAPBUFFERS;
+	SwapBuffers(ghDC);
 }
