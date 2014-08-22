@@ -81,6 +81,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Play1.cpp" />
+    <ClCompile Include="Position.cpp" />
+    <ClCompile Include="Swarm.cpp" />
+    <ClCompile Include="SwarmMember.cpp" />
+    <ClCompile Include="Vec3D.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Position.h" />
+    <ClInclude Include="Swarm.h" />
+    <ClInclude Include="SwarmMember.h" />
+    <ClInclude Include="Vec3D.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
