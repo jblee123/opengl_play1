@@ -1,10 +1,14 @@
 #include <windows.h>
 #include <windowsx.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
+
+#include <GL/glew.h>
+#include <GL/Wglew.h>
+
+#include "Swarm.h"
+#include "GLPrograms.h"
 
 // Windows globals, defines, and prototypes
-WCHAR szAppName[] = L"Win OpenGL";
+WCHAR szAppName[] = L"Play1";
 HWND  ghWnd;
 HDC   ghDC;
 HGLRC ghRC;
@@ -13,20 +17,19 @@ const int WIDTH = 1200;
 const int HEIGHT = 800;
 
 LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
-BOOL bSetupPixelFormat(HDC);
-
-// OpenGL globals, defines, and prototypes
-GLfloat latitude, longitude, latinc, longinc;
-GLdouble radius;
-
-const int GLOBE    = 1;
-const int CYLINDER = 2;
-const int CONE     = 3;
+BOOL setupPixelFormat(HDC);
+void doCleanup(HWND);
 
 GLvoid resize(GLsizei, GLsizei);
-GLvoid initializeGL(GLsizei, GLsizei);
-GLvoid drawScene(GLvoid);
-void polarView(GLdouble, GLdouble, GLdouble, GLdouble);
+void initializeGL();
+void setData();
+GLvoid drawScene();
+
+const int SWARM_SIZE = 2;
+Swarm g_swarm;
+
+GLPrograms g_programs;
+GLuint g_vertexArrayObject;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     MSG msg;
@@ -50,7 +53,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // Create the frame
     ghWnd = CreateWindow(szAppName,
-        L"Generic OpenGL Sample",
+        L"Play1",
         WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
@@ -84,7 +87,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
         drawScene();
+        SwapBuffers(ghDC);
         Sleep((DWORD)(1000.0 / 30.0));
+        //Sleep(1000);
     }
 }
 
@@ -98,14 +103,14 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
     case WM_CREATE:
         ghDC = GetDC(hWnd);
-        if (!bSetupPixelFormat(ghDC)) {
+        if (!setupPixelFormat(ghDC)) {
             PostQuitMessage(0);
         }
 
-        ghRC = wglCreateContext(ghDC);
-        wglMakeCurrent(ghDC, ghRC);
+        initializeGL();
         GetClientRect(hWnd, &rect);
-        initializeGL(rect.right, rect.bottom);
+        resize(rect.right, rect.bottom); // added in leiu of passing dims to initialize
+        g_programs.compilePrograms();
         break;
 
     case WM_PAINT:
@@ -119,47 +124,33 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         break;
 
     case WM_CLOSE:
-        if (ghRC) {
-            wglDeleteContext(ghRC);
-            ghRC = 0;
-        }
-        if (ghDC) {
-            ReleaseDC(hWnd, ghDC);
-            ghDC = 0;
-        }
-
+        doCleanup(hWnd);
         DestroyWindow(hWnd);
         break;
 
     case WM_DESTROY:
-        if (ghRC) {
-            wglDeleteContext(ghRC);
-        }
-        if (ghDC) {
-            ReleaseDC(hWnd, ghDC);
-        }
-
+        doCleanup(hWnd);
         PostQuitMessage(0);
         break;
 
-    case WM_KEYDOWN:
-        switch (wParam) {
-        case VK_LEFT:
-            longinc += 0.5F;
-            break;
+    //case WM_KEYDOWN:
+    //    switch (wParam) {
+    //    case VK_LEFT:
+    //        longinc += 0.5F;
+    //        break;
 
-        case VK_RIGHT:
-            longinc -= 0.5F;
-            break;
+    //    case VK_RIGHT:
+    //        longinc -= 0.5F;
+    //        break;
 
-        case VK_UP:
-            latinc += 0.5F;
-            break;
+    //    case VK_UP:
+    //        latinc += 0.5F;
+    //        break;
 
-        case VK_DOWN:
-            latinc -= 0.5F;
-            break;
-        }
+    //    case VK_DOWN:
+    //        latinc -= 0.5F;
+    //        break;
+    //    }
 
     case WM_MOUSEMOVE: {
         int xPos = GET_X_LPARAM(lParam);
@@ -175,30 +166,43 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return lRet;
 }
 
-BOOL bSetupPixelFormat(HDC hdc) {
-    PIXELFORMATDESCRIPTOR pfd, *ppfd;
+void doCleanup(HWND hWnd) {
+
+    glDeleteVertexArrays(1, &g_vertexArrayObject);
+    g_programs.cleanupPrograms();
+
+    if (ghRC) {
+        wglDeleteContext(ghRC);
+        ghRC = 0;
+    }
+    if (ghDC) {
+        ReleaseDC(hWnd, ghDC);
+        ghDC = 0;
+    }
+}
+
+BOOL setupPixelFormat(HDC hdc) {
+    PIXELFORMATDESCRIPTOR pfd;
     int pixelformat;
 
-    ppfd = &pfd;
+    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+    pfd.nVersion = 1;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.dwLayerMask = PFD_MAIN_PLANE;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 32;
+    pfd.cDepthBits = 0;// 16;
+    pfd.cAccumBits = 0;
+    pfd.cStencilBits = 0;
 
-    ppfd->nSize = sizeof(PIXELFORMATDESCRIPTOR);
-    ppfd->nVersion = 1;
-    ppfd->dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-    ppfd->dwLayerMask = PFD_MAIN_PLANE;
-    ppfd->iPixelType = PFD_TYPE_COLORINDEX;
-    ppfd->cColorBits = 8;
-    ppfd->cDepthBits = 16;
-    ppfd->cAccumBits = 0;
-    ppfd->cStencilBits = 0;
+    pixelformat = ChoosePixelFormat(hdc, &pfd);
 
-    pixelformat = ChoosePixelFormat(hdc, ppfd);
-
-    if ((pixelformat = ChoosePixelFormat(hdc, ppfd)) == 0) {
+    if ((pixelformat = ChoosePixelFormat(hdc, &pfd)) == 0) {
         MessageBox(NULL, L"ChoosePixelFormat failed", L"Error", MB_OK);
         return FALSE;
     }
 
-    if (!SetPixelFormat(hdc, pixelformat, ppfd)) {
+    if (!SetPixelFormat(hdc, pixelformat, &pfd)) {
         MessageBox(NULL, L"SetPixelFormat failed", L"Error", MB_OK);
         return FALSE;
     }
@@ -209,108 +213,104 @@ BOOL bSetupPixelFormat(HDC hdc) {
 // OpenGL code
 
 GLvoid resize(GLsizei width, GLsizei height) {
-    GLfloat aspect;
+    //GLfloat aspect;
 
     glViewport(0, 0, width, height);
 
-    aspect = (GLfloat)width / height;
+    //aspect = (GLfloat)width / height;
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45.0, aspect, 3.0, 7.0);
-    glMatrixMode(GL_MODELVIEW);
+    //glMatrixMode(GL_PROJECTION);
+    //glLoadIdentity();
+    //gluPerspective(45.0, aspect, 3.0, 7.0);
+    //glMatrixMode(GL_MODELVIEW);
 }
 
-GLvoid createObjects() {
-    GLUquadricObj* quadObj;
-
-    glNewList(GLOBE, GL_COMPILE);
-    quadObj = gluNewQuadric();
-    gluQuadricDrawStyle(quadObj, GLU_LINE);
-    gluSphere(quadObj, 1.5, 16, 16);
-    glEndList();
-
-    glNewList(CONE, GL_COMPILE);
-    quadObj = gluNewQuadric();
-    gluQuadricDrawStyle(quadObj, GLU_FILL);
-    gluQuadricNormals(quadObj, GLU_SMOOTH);
-    gluCylinder(quadObj, 0.3, 0.0, 0.6, 15, 10);
-    glEndList();
-
-    glNewList(CYLINDER, GL_COMPILE);
-    glPushMatrix();
-    glRotatef((GLfloat)90.0, (GLfloat)1.0, (GLfloat)0.0, (GLfloat)0.0);
-    glTranslatef((GLfloat)0.0, (GLfloat)0.0, (GLfloat)-1.0);
-    quadObj = gluNewQuadric();
-    gluQuadricDrawStyle(quadObj, GLU_FILL);
-    gluQuadricNormals(quadObj, GLU_SMOOTH);
-    gluCylinder(quadObj, 0.3, 0.3, 0.6, 12, 2);
-    glPopMatrix();
-    glEndList();
+void createSwarm() {
+    //for (int i = 0; i < SWARM_SIZE; i++) {
+    //    g_swarm.addMember(new SwarmMember())
+    //}
 }
 
-GLvoid initializeGL(GLsizei width, GLsizei height) {
-    GLfloat maxObjectSize, aspect;
-    GLdouble near_plane, far_plane;
+void initializeGL() {
+    HGLRC tempContext = wglCreateContext(ghDC);
+    wglMakeCurrent(ghDC, tempContext);
+
+    GLenum err = glewInit();
+    if (err != GLEW_OK) {
+        // failed to initialize GLEW!
+    }
+
+    int attribs[] = {
+        WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+        WGL_CONTEXT_MINOR_VERSION_ARB, 1,
+        WGL_CONTEXT_FLAGS_ARB, 0,
+        0
+    };
+
+    if (wglewIsSupported("WGL_ARB_create_context") == 1) {
+        ghRC = wglCreateContextAttribsARB(ghDC, 0, attribs);
+        wglMakeCurrent(NULL, NULL);
+        wglDeleteContext(tempContext);
+        wglMakeCurrent(ghDC, ghRC);
+    }
+    else {
+        //It's not possible to make a GL 3.x context. Use the old style context (GL 2.1 and before)
+        ghRC = tempContext;
+    }
+
+    glGenVertexArrays(1, &g_vertexArrayObject);
+
+    int OpenGLVersion[2];
+    glGetIntegerv(GL_MAJOR_VERSION, &OpenGLVersion[0]);
+    glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
+
+    setData();
+}
+
+GLuint g_vaoID[1]; // two vertex array objects, one for each drawn object
+GLuint g_vboID[1]; // three VBOs
+void setData() {
+
+    // First simple object
+    float vert[9];	// vertex array
+
+    //vert[0] = -0.3; vert[1] = 0.5; vert[2] = -1.0;
+    //vert[3] = -0.8; vert[4] = -0.5; vert[5] = -1.0;
+    //vert[6] = 0.2; vert[7] = -0.5; vert[8] = -1.0;
+
+    // Two VAOs allocation
+    glGenVertexArrays(2, &g_vaoID[0]);
+
+    // First VAO setup
+    glBindVertexArray(g_vaoID[0]);
+
+    glGenBuffers(1, g_vboID);
+
+    glBindBuffer(GL_ARRAY_BUFFER, g_vboID[0]);
+    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), vert, GL_STATIC_DRAW);
+    glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+}
+
+GLvoid drawScene() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glEnable(GL_DEPTH_TEST);
+    glUseProgram(g_programs.getProg1());
 
-    glMatrixMode(GL_PROJECTION);
-    aspect = (GLfloat)width / height;
-    gluPerspective(45.0, aspect, 3.0, 7.0);
-    glMatrixMode(GL_MODELVIEW);
+    glBindVertexArray(g_vaoID[0]);    // select first VAO
+    glDrawArrays(GL_TRIANGLES, 0, 3); // draw first object
 
-    near_plane = 3.0;
-    far_plane = 7.0;
-    maxObjectSize = 3.0F;
-    radius = near_plane + maxObjectSize / 2.0;
+    glBindVertexArray(0);
 
-    latitude = 0.0F;
-    longitude = 0.0F;
-    latinc = 6.0F;
-    longinc = 2.5F;
-
-    createObjects();
-}
-
-void polarView(GLdouble radius, GLdouble twist, GLdouble latitude, GLdouble longitude) {
-    glTranslated(0.0, 0.0, -radius);
-    glRotated(-twist, 0.0, 0.0, 1.0);
-    glRotated(-latitude, 1.0, 0.0, 0.0);
-    glRotated(longitude, 0.0, 0.0, 1.0);
-}
-
-GLvoid drawScene(GLvoid) {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glPushMatrix();
-
-    latitude += latinc;
-    longitude += longinc;
-
-    polarView(radius, 0, latitude, longitude);
-
-    glColor4f(1, 0, 0, 0.5);
-    glCallList(CONE);
-
-    glColor4f(0, 0, 1, 0.5);
-    glCallList(GLOBE);
-
-    glColor4f(0, 1, 0, 0.5);
-    glPushMatrix();
-    glTranslatef(0.8F, -0.65F, 0.0F);
-    glRotatef(30.0F, 1.0F, 0.5F, 1.0F);
-    glCallList(CYLINDER);
-    glPopMatrix();
-
-    glPopMatrix();
-
-    glDisable(GL_BLEND);
-
-    SwapBuffers(ghDC);
+    glUseProgram(0);
+    glColor3f(0, 1, 0);
+    glBegin(GL_POLYGON);
+    glVertex3f(0.0f, -0.5f, 0.0f);
+    glVertex3f(-1.0f, -0.5f, 0.0f);
+    glVertex3f(-1.0f, -1.0f, 0.0f);
+    glVertex3f(0.0f, -1.0f, 0.0f);
+    glEnd();
 }
