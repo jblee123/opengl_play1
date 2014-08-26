@@ -26,24 +26,31 @@ GLuint GLPrograms::getProg1() const {
 
 void GLPrograms::compileProgram1() {
     const GLchar* VERTEX_SHADER_SOURCE[] = {
-        "#version 430 core                          \n"
-        "                                           \n"
-        "void main(void) {                          \n"
-        "    const vec4 vertices[3] = vec4[3](      \n"
-        "        vec4( 0.25, -0.25, 0.5, 1.0),      \n"
-        "        vec4(-0.25, -0.25, 0.5, 1.0),      \n"
-        "        vec4( 0.25,  0.25, 0.5, 1.0));     \n"
-        "    gl_Position = vertices[gl_VertexID];   \n"
-        "}                                          \n"
+        "#version 410 core                                  \n"
+        "                                                   \n"
+        "layout (location = 0) in vec4 offset;              \n"
+        "layout (location = 1) in vec4 color;               \n"
+        "                                                   \n"
+        "out vec4 vs_color;                                 \n"
+        "                                                   \n"
+        "void main(void) {                                  \n"
+        "    const vec4 vertices[] = vec4[3](               \n"
+        "        vec4( 0.25, -0.25, 0.5, 1.0),              \n"
+        "        vec4(-0.25, -0.25, 0.5, 1.0),              \n"
+        "        vec4( 0.25,  0.25, 0.5, 1.0));             \n"
+        "    gl_Position = vertices[gl_VertexID] + offset;  \n"
+        "    vs_color = color;                              \n"
+        "}                                                  \n"
     };
 
     const GLchar* FRAGMENT_SHADER_SOURCE[] = {
-        "#version 430 core                      \n"
-        "                                       \n"
-        "out vec4 color;                        \n"
-        "void main(void) {                      \n"
-        "    color = vec4(0.0, 0.0, 1.0, 1.0);  \n"
-        "}                                      \n"
+        "#version 410 core      \n"
+        "                       \n"
+        "in vec4 vs_color;      \n"
+        "out vec4 color;        \n"
+        "void main(void) {      \n"
+        "    color = vs_color;  \n"
+        "}                      \n"
     };
 
     // vertex shader

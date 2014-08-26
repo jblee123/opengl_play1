@@ -22,14 +22,13 @@ void doCleanup(HWND);
 
 GLvoid resize(GLsizei, GLsizei);
 void initializeGL();
-void setData();
 GLvoid drawScene();
 
 const int SWARM_SIZE = 2;
 Swarm g_swarm;
 
 GLPrograms g_programs;
-GLuint g_vertexArrayObject;
+GLuint g_vaoID[1];
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     MSG msg;
@@ -88,8 +87,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
         drawScene();
         SwapBuffers(ghDC);
-        Sleep((DWORD)(1000.0 / 30.0));
-        //Sleep(1000);
+        Sleep((DWORD)(1000.0 / 60.0));
     }
 }
 
@@ -168,7 +166,7 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 void doCleanup(HWND hWnd) {
 
-    glDeleteVertexArrays(1, &g_vertexArrayObject);
+    glDeleteVertexArrays(1, &g_vaoID[0]);
     g_programs.cleanupPrograms();
 
     if (ghRC) {
@@ -240,8 +238,9 @@ void initializeGL() {
         // failed to initialize GLEW!
     }
 
+    // My card currently only supports OpenGL 4.1 -- jbl
     int attribs[] = {
-        WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+        WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
         WGL_CONTEXT_MINOR_VERSION_ARB, 1,
         WGL_CONTEXT_FLAGS_ARB, 0,
         0
@@ -258,40 +257,12 @@ void initializeGL() {
         ghRC = tempContext;
     }
 
-    glGenVertexArrays(1, &g_vertexArrayObject);
-
     int OpenGLVersion[2];
     glGetIntegerv(GL_MAJOR_VERSION, &OpenGLVersion[0]);
     glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
 
-    setData();
-}
-
-GLuint g_vaoID[1]; // two vertex array objects, one for each drawn object
-GLuint g_vboID[1]; // three VBOs
-void setData() {
-
-    // First simple object
-    float vert[9];	// vertex array
-
-    //vert[0] = -0.3; vert[1] = 0.5; vert[2] = -1.0;
-    //vert[3] = -0.8; vert[4] = -0.5; vert[5] = -1.0;
-    //vert[6] = 0.2; vert[7] = -0.5; vert[8] = -1.0;
-
-    // Two VAOs allocation
-    glGenVertexArrays(2, &g_vaoID[0]);
-
-    // First VAO setup
+    glGenVertexArrays(1, &g_vaoID[0]);
     glBindVertexArray(g_vaoID[0]);
-
-    glGenBuffers(1, g_vboID);
-
-    glBindBuffer(GL_ARRAY_BUFFER, g_vboID[0]);
-    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), vert, GL_STATIC_DRAW);
-    glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-
-    glBindVertexArray(0);
 }
 
 GLvoid drawScene() {
@@ -300,17 +271,23 @@ GLvoid drawScene() {
 
     glUseProgram(g_programs.getProg1());
 
-    glBindVertexArray(g_vaoID[0]);    // select first VAO
+    DWORD currentTime = timeGetTime();
+    float timeInSec = (float)currentTime / 1000.0f;
+
+    GLfloat offset[] = {
+        cos(timeInSec) * 0.5,
+        sin(timeInSec) * 0.5,
+        0.0f, 0.0f
+    };
+    GLfloat color[] = {
+        cos(timeInSec) * 0.5f + 0.5f,
+        -cos(timeInSec / 2.0f) * 0.5f + 0.5f,
+        -cos(timeInSec / 3.0f) * 0.5f + 0.5f,
+        1
+    };
+
+    glVertexAttrib4fv(0, offset);
+    glVertexAttrib4fv(1, color);
+
     glDrawArrays(GL_TRIANGLES, 0, 3); // draw first object
-
-    glBindVertexArray(0);
-
-    glUseProgram(0);
-    glColor3f(0, 1, 0);
-    glBegin(GL_POLYGON);
-    glVertex3f(0.0f, -0.5f, 0.0f);
-    glVertex3f(-1.0f, -0.5f, 0.0f);
-    glVertex3f(-1.0f, -1.0f, 0.0f);
-    glVertex3f(0.0f, -1.0f, 0.0f);
-    glEnd();
 }
