@@ -19,6 +19,7 @@ const int HEIGHT = 800;
 LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL setupPixelFormat(HDC);
 void doCleanup(HWND);
+void CALLBACK DrawTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 
 GLvoid resize(GLsizei, GLsizei);
 void initializeGL();
@@ -29,6 +30,8 @@ Swarm g_swarm;
 
 GLPrograms g_programs;
 GLuint g_vaoID[1];
+
+const UINT_PTR DRAW_TIMER_ID = 1;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     MSG msg;
@@ -46,12 +49,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wndclass.lpszMenuName = szAppName;
     wndclass.lpszClassName = szAppName;
 
-    if (!RegisterClass(&wndclass)) {
+    if (!::RegisterClass(&wndclass)) {
         return FALSE;
     }
 
     // Create the frame
-    ghWnd = CreateWindow(szAppName,
+    ghWnd = ::CreateWindow(szAppName,
         L"Play1",
         WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
         CW_USEDEFAULT,
@@ -73,22 +76,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     UpdateWindow(ghWnd);
 
-    // animation loop
-    while (1) {
-        // Process all pending messages
-        while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE) == TRUE) {
-            if (GetMessage(&msg, NULL, 0, 0)) {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-            }
-            else {
-                return TRUE;
-            }
-        }
-        drawScene();
-        SwapBuffers(ghDC);
-        Sleep((DWORD)(1000.0 / 60.0));
+    ::SetTimer(ghWnd, DRAW_TIMER_ID, 0, DrawTimerProc);
+
+    while (::GetMessage(&msg, NULL, 0, 0)) {
+        ::TranslateMessage(&msg);
+        ::DispatchMessage(&msg);
     }
+    return TRUE;
+}
+
+void CALLBACK DrawTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
+    const int TARGET_FPS = 60;
+    const UINT TIME_PER_FRAME = 1000 / TARGET_FPS;
+    ::SetTimer(ghWnd, DRAW_TIMER_ID, TIME_PER_FRAME, DrawTimerProc);
+
+    drawScene();
 }
 
 // main window procedure
@@ -290,4 +292,6 @@ GLvoid drawScene() {
     glVertexAttrib4fv(1, color);
 
     glDrawArrays(GL_TRIANGLES, 0, 3); // draw first object
+
+    ::SwapBuffers(ghDC);
 }
