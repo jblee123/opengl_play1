@@ -1,10 +1,13 @@
 #include <windows.h>
 #include <windowsx.h>
 
+#include <vector>
+
 #include <GL/glew.h>
 #include <GL/Wglew.h>
 
-#include "Swarm.h"
+//#include "Swarm.h"
+#include "SwarmMember.h"
 #include "GLPrograms.h"
 
 // Windows globals, defines, and prototypes
@@ -24,12 +27,18 @@ void CALLBACK DrawTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime
 GLvoid resize(GLsizei, GLsizei);
 void initializeGL();
 GLvoid drawScene();
+void createSwarm();
+void setupData();
 
-const int SWARM_SIZE = 2;
-Swarm g_swarm;
+const int SWARM_SIZE = 10;
+//Swarm g_swarm;
+std::vector<SwarmMember*> g_swarm;
 
 GLPrograms g_programs;
-GLuint g_vaoID[1];
+//GLuint g_vaoID[1];
+
+GLuint g_membersVao;
+GLuint g_membersVbo;
 
 const UINT_PTR DRAW_TIMER_ID = 1;
 
@@ -72,9 +81,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     // show and update main window
-    ShowWindow(ghWnd, nCmdShow);
+    ::ShowWindow(ghWnd, nCmdShow);
 
-    UpdateWindow(ghWnd);
+    ::UpdateWindow(ghWnd);
+
+    createSwarm();
+    setupData();
 
     ::SetTimer(ghWnd, DRAW_TIMER_ID, 0, DrawTimerProc);
 
@@ -168,7 +180,8 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 void doCleanup(HWND hWnd) {
 
-    glDeleteVertexArrays(1, &g_vaoID[0]);
+    //glDeleteVertexArrays(1, &g_vaoID[0]);
+    glDeleteVertexArrays(1, &g_membersVao);
     g_programs.cleanupPrograms();
 
     if (ghRC) {
@@ -226,9 +239,20 @@ GLvoid resize(GLsizei width, GLsizei height) {
 }
 
 void createSwarm() {
-    //for (int i = 0; i < SWARM_SIZE; i++) {
-    //    g_swarm.addMember(new SwarmMember())
-    //}
+    for (int i = 0; i < SWARM_SIZE; i++) {
+        SwarmMember* member = //(i == 0) ?
+            //new SwarmMember(i + 1) :
+            new SwarmMember(
+                i + 1,
+                Position(
+                    Vec3D(
+                        ((float)rand() / (float)RAND_MAX) * 2 - 1,
+                        ((float)rand() / (float)RAND_MAX) * 2 - 1,
+                        -1.0f),
+                    0));
+        //g_swarm.addMember(member);
+        g_swarm.push_back(member);
+    }
 }
 
 void initializeGL() {
@@ -263,35 +287,83 @@ void initializeGL() {
     glGetIntegerv(GL_MAJOR_VERSION, &OpenGLVersion[0]);
     glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
 
-    glGenVertexArrays(1, &g_vaoID[0]);
-    glBindVertexArray(g_vaoID[0]);
+    //glGenVertexArrays(1, &g_vaoID[0]);
+    //glBindVertexArray(g_vaoID[0]);
+}
+
+void setupData() {
+    GLfloat memberCoords[] = {
+        -0.02f, -0.02f, 0.0f, 1,
+         0.0f,   0.05f, 0.0f, 1,
+         0.0f,   0.0f,  0.0f, 1,
+         0.02f, -0.02f, 0.0f, 1
+    };
+    //GLfloat memberCoords[] = {
+    //    -0.52f, -0.02f, -1.0f, 1,
+    //    0.5f, 0.05f, -1.0f, 1,
+    //    0.5f, 0.0f, -1.0f, 1,
+    //    0.52f, -0.02f, -1.0f, 1
+    //};
+
+    GLfloat memberColor[] = { 0.0f, 1.0f, 0.0f, 1.0f };
+
+    const GLuint MEMBER_COORDS_OFFSET = 0;
+    const GLuint MEMBER_COORDS_SIZE = sizeof(memberCoords);
+    const GLuint MEMBER_COLOR_OFFSET = MEMBER_COORDS_OFFSET + MEMBER_COORDS_SIZE;
+    const GLuint MEMBER_COLOR_SIZE = sizeof(memberColor);
+    const GLuint MEMBER_POS_OFFSET = MEMBER_COLOR_OFFSET + MEMBER_COLOR_SIZE;
+    const GLuint MEMBER_POS_SIZE = sizeof(GLfloat) * 4 * g_swarm.size();
+    const GLuint SWARM_BUFFER_SIZE = MEMBER_COORDS_SIZE + MEMBER_COLOR_SIZE + MEMBER_POS_SIZE;
+
+    glGenVertexArrays(1, &g_membersVao);
+    glGenBuffers(1, &g_membersVbo);
+    glBindVertexArray(g_membersVao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_membersVbo);
+    glBufferData(GL_ARRAY_BUFFER, SWARM_BUFFER_SIZE, NULL, GL_STATIC_DRAW);
+
+    glBufferSubData(GL_ARRAY_BUFFER, MEMBER_COORDS_OFFSET, MEMBER_COORDS_SIZE, memberCoords);
+
+    glBufferSubData(GL_ARRAY_BUFFER, MEMBER_COLOR_OFFSET, MEMBER_COLOR_SIZE, memberColor);
+
+    int idx = 0;
+    GLfloat* memberPositions = new GLfloat[4 * g_swarm.size()];
+    for (auto member : g_swarm) {
+        Vec3D loc = member->getPos().getLocation();
+        memberPositions[idx++] = loc.getX();
+        memberPositions[idx++] = loc.getY();
+        memberPositions[idx++] = loc.getZ();
+        memberPositions[idx++] = 0.0f;
+    }
+
+    glBufferSubData(GL_ARRAY_BUFFER, MEMBER_POS_OFFSET, MEMBER_POS_SIZE, memberPositions);
+
+    delete[] memberPositions;
+
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)MEMBER_COORDS_OFFSET);
+    //glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)MEMBER_COLOR_OFFSET);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)MEMBER_POS_OFFSET);
+
+    glEnableVertexAttribArray(0);
+    //glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+
+    //glVertexAttribDivisor(1, 1);
+    glVertexAttribDivisor(2, 1);
+
+    glVertexAttrib4fv(1, memberColor);
+    //GLfloat vec[] = { 0.5, 0.5, 0.0, 0.0 };
+    //glVertexAttrib4fv(2, vec);
+
+    glBindVertexArray(g_membersVao);
 }
 
 GLvoid drawScene() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(g_programs.getProg1());
-
-    DWORD currentTime = timeGetTime();
-    float timeInSec = (float)currentTime / 1000.0f;
-
-    GLfloat offset[] = {
-        cos(timeInSec) * 0.5,
-        sin(timeInSec) * 0.5,
-        0.0f, 0.0f
-    };
-    GLfloat color[] = {
-        cos(timeInSec) * 0.5f + 0.5f,
-        -cos(timeInSec / 2.0f) * 0.5f + 0.5f,
-        -cos(timeInSec / 3.0f) * 0.5f + 0.5f,
-        1
-    };
-
-    glVertexAttrib4fv(0, offset);
-    glVertexAttrib4fv(1, color);
-
-    glDrawArrays(GL_TRIANGLES, 0, 3); // draw first object
+    glUseProgram(g_programs.getProg2());
+    glBindVertexArray(g_membersVao);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, SWARM_SIZE);
 
     ::SwapBuffers(ghDC);
 }

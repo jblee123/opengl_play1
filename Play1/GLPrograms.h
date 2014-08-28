@@ -13,9 +13,12 @@ public:
     void cleanupPrograms();
 
     GLuint getProg1() const;
+    GLuint getProg2() const;
 
 protected:
     void compileProgram1();
+    void compileProgram2();
 
     GLuint m_prog1;
+    GLuint m_prog2;
 };
