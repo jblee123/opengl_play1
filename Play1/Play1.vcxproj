@@ -116,6 +116,7 @@
     <ClCompile Include="Vec3D.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Color.h" />
     <ClInclude Include="GLPrograms.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="Swarm.h" />

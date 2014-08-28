@@ -12,7 +12,7 @@ public:
 
     Vec3D getLocation() const;
     float getHeading() const;
-
+    
 protected:
     Vec3D m_location;
     float m_heading;
