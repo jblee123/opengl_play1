@@ -17,7 +17,8 @@ HWND  ghWnd;
 HDC   ghDC;
 HGLRC ghRC;
 
-const int WIDTH = 1200;
+//const int WIDTH = 1200;
+const int WIDTH = 800;
 const int HEIGHT = 800;
 
 LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
@@ -36,7 +37,6 @@ const int SWARM_SIZE = 500;
 std::vector<SwarmMember*> g_swarm;
 
 GLPrograms g_programs;
-//GLuint g_vaoID[1];
 
 GLuint g_membersVao;
 GLuint g_membersVbo;
@@ -181,7 +181,6 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 void doCleanup(HWND hWnd) {
 
-    //glDeleteVertexArrays(1, &g_vaoID[0]);
     glDeleteVertexArrays(1, &g_membersVao);
     g_programs.cleanupPrograms();
 
@@ -250,7 +249,7 @@ void createSwarm() {
                         randf() * 2 - 1,
                         randf() * 2 - 1,
                         -1.0f),
-                    0));
+                    randAngle()));
         //g_swarm.addMember(member);
         Color color;
         color.r = rand() % 256;
@@ -308,7 +307,7 @@ void setupData() {
     const GLuint MEMBER_COLOR_OFFSET = MEMBER_COORDS_OFFSET + MEMBER_COORDS_SIZE;
     const GLuint MEMBER_COLOR_SIZE = sizeof(GLfloat) * 4 * g_swarm.size();
     const GLuint MEMBER_POS_OFFSET = MEMBER_COLOR_OFFSET + MEMBER_COLOR_SIZE;
-    const GLuint MEMBER_POS_SIZE = sizeof(GLfloat) * 4 * g_swarm.size();
+    const GLuint MEMBER_POS_SIZE = sizeof(GLfloat) * 5 * g_swarm.size();
     const GLuint SWARM_BUFFER_SIZE = MEMBER_COORDS_SIZE + MEMBER_COLOR_SIZE + MEMBER_POS_SIZE;
 
     glGenVertexArrays(1, &g_membersVao);
@@ -319,32 +318,24 @@ void setupData() {
 
     glBufferSubData(GL_ARRAY_BUFFER, MEMBER_COORDS_OFFSET, MEMBER_COORDS_SIZE, memberCoords);
 
-    int idx = 0;
-    GLfloat* memberPositions = new GLfloat[4 * g_swarm.size()];
+    int posIdx = 0;
+    int colorIdx = 0;
+    GLfloat* memberPositions = new GLfloat[5 * g_swarm.size()];
     GLfloat* memberColor = new GLfloat[4 * g_swarm.size()];
     for (auto member : g_swarm) {
-        Vec3D loc = member->getPos().getLocation();
-        memberPositions[idx + 0] = loc.getX();
-        memberPositions[idx + 1] = loc.getY();
-        memberPositions[idx + 2] = loc.getZ();
-        memberPositions[idx + 3] = 0.0f;
+        Position pos = member->getPos();
+        Vec3D loc = pos.getLocation();
+        memberPositions[posIdx++] = loc.getX();
+        memberPositions[posIdx++] = loc.getY();
+        memberPositions[posIdx++] = loc.getZ();
+        memberPositions[posIdx++] = 0.0f;
+        memberPositions[posIdx++] = pos.getHeading();
 
         Color color = member->getColor();
-        memberColor[idx + 0] = (float)color.r / 255.0f;
-        memberColor[idx + 1] = (float)color.g / 255.0f;
-        memberColor[idx + 2] = (float)color.b / 255.0f;
-        memberColor[idx + 3] = (float)color.a / 255.0f;
-
-        idx += 4;
-    }
-
-    idx = 0;
-    for (auto member : g_swarm) {
-        Vec3D loc = member->getPos().getLocation();
-        memberPositions[idx++] = loc.getX();
-        memberPositions[idx++] = loc.getY();
-        memberPositions[idx++] = loc.getZ();
-        memberPositions[idx++] = 0.0f;
+        memberColor[colorIdx++] = (float)color.r / 255.0f;
+        memberColor[colorIdx++] = (float)color.g / 255.0f;
+        memberColor[colorIdx++] = (float)color.b / 255.0f;
+        memberColor[colorIdx++] = (float)color.a / 255.0f;
     }
 
     glBufferSubData(GL_ARRAY_BUFFER, MEMBER_COLOR_OFFSET, MEMBER_COLOR_SIZE, memberColor);
@@ -352,17 +343,21 @@ void setupData() {
     glBufferSubData(GL_ARRAY_BUFFER, MEMBER_POS_OFFSET, MEMBER_POS_SIZE, memberPositions);
 
     delete[] memberPositions;
+    delete[] memberColor;
 
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)MEMBER_COORDS_OFFSET);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)MEMBER_COLOR_OFFSET);
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)MEMBER_POS_OFFSET);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, (GLvoid*)MEMBER_POS_OFFSET);
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, (GLvoid*)(MEMBER_POS_OFFSET + (sizeof(GLfloat) * 4)));
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
 
     glVertexAttribDivisor(1, 1);
     glVertexAttribDivisor(2, 1);
+    glVertexAttribDivisor(3, 1);
 
     glBindVertexArray(g_membersVao);
 }
