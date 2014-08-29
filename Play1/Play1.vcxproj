@@ -113,11 +113,13 @@
     <ClCompile Include="Position.cpp" />
     <ClCompile Include="Swarm.cpp" />
     <ClCompile Include="SwarmMember.cpp" />
+    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="Vec3D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h" />
     <ClInclude Include="GLPrograms.h" />
+    <ClInclude Include="Utils.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="Swarm.h" />
     <ClInclude Include="SwarmMember.h" />

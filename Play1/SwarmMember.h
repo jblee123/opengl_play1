@@ -1,6 +1,7 @@
-#include "Position.h"
+#pragma once
 
 #include "Color.h"
+#include "Position.h"
 
 class SwarmMember {
 public:

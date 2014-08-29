@@ -1,5 +1,4 @@
-#ifndef _COLOR_H
-#define _COLOR_H
+#pragma once
 
 struct Color {
     unsigned int r : 8;
@@ -10,5 +9,3 @@ struct Color {
     Color() : r(0), g(0), b(0), a(0) {
     }
 };
-
-#endif _COLOR_H

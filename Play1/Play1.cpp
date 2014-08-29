@@ -9,6 +9,7 @@
 //#include "Swarm.h"
 #include "SwarmMember.h"
 #include "GLPrograms.h"
+#include "Utils.h"
 
 // Windows globals, defines, and prototypes
 WCHAR szAppName[] = L"Play1";
@@ -246,8 +247,8 @@ void createSwarm() {
                 i + 1,
                 Position(
                     Vec3D(
-                        ((float)rand() / (float)RAND_MAX) * 2 - 1,
-                        ((float)rand() / (float)RAND_MAX) * 2 - 1,
+                        randf() * 2 - 1,
+                        randf() * 2 - 1,
                         -1.0f),
                     0));
         //g_swarm.addMember(member);
