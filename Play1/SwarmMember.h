@@ -1,5 +1,7 @@
 #pragma once
 
+#include <windows.h>
+
 #include "Color.h"
 #include "Position.h"
 
@@ -10,6 +12,7 @@ public:
 
     int getId() const;
     Position getPos() const;
+    Position getPosForAnimation(DWORD time) const;
 
     Color getColor() const;
     void setColor(Color color);

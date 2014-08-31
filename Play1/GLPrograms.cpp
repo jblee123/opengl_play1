@@ -3,7 +3,8 @@
 #include "GLPrograms.h"
 
 GLPrograms::GLPrograms() :
-    m_prog1(0), m_prog2(0) {
+    m_prog1(0),
+    m_prog2(0) {
 }
 
 GLPrograms::~GLPrograms() {
@@ -33,8 +34,37 @@ GLuint GLPrograms::getProg2() const {
     return m_prog2;
 }
 
+void GLPrograms::compileProgram(
+    const GLchar* vertexShaderSource,
+    const GLchar* fragmentShaderSource,
+    GLuint& prog) {
+
+    const GLchar* VERTEX_SHADER_SOURCE[] = { vertexShaderSource };
+    const GLchar* FRAGMENT_SHADER_SOURCE[] = { fragmentShaderSource };
+
+    // vertex shader
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, VERTEX_SHADER_SOURCE, nullptr);
+    glCompileShader(vertexShader);
+
+    // fragment shader
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, FRAGMENT_SHADER_SOURCE, nullptr);
+    glCompileShader(fragmentShader);
+
+    // Create program, attach shaders to it, and link it
+    prog = glCreateProgram();
+    glAttachShader(prog, vertexShader);
+    glAttachShader(prog, fragmentShader);
+    glLinkProgram(prog);
+
+    // Delete the shaders as the program has them now
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+}
+
 void GLPrograms::compileProgram1() {
-    const GLchar* VERTEX_SHADER_SOURCE[] = {
+    const GLchar* VERTEX_SHADER_SOURCE =
         "#version 410 core                                  \n"
         "                                                   \n"
         "layout (location = 0) in vec4 offset;              \n"
@@ -49,42 +79,25 @@ void GLPrograms::compileProgram1() {
         "        vec4( 0.25,  0.25, 0.5, 1.0));             \n"
         "    gl_Position = vertices[gl_VertexID] + offset;  \n"
         "    vs_color = color;                              \n"
-        "}                                                  \n"
-    };
+        "}                                                  \n";
 
-    const GLchar* FRAGMENT_SHADER_SOURCE[] = {
+    const GLchar* FRAGMENT_SHADER_SOURCE =
         "#version 410 core      \n"
         "                       \n"
         "in vec4 vs_color;      \n"
         "out vec4 color;        \n"
         "void main(void) {      \n"
         "    color = vs_color;  \n"
-        "}                      \n"
-    };
+        "}                      \n";
 
-    // vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, VERTEX_SHADER_SOURCE, nullptr);
-    glCompileShader(vertexShader);
-
-    // fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, FRAGMENT_SHADER_SOURCE, nullptr);
-    glCompileShader(fragmentShader);
-
-    // Create program, attach shaders to it, and link it
-    m_prog1 = glCreateProgram();
-    glAttachShader(m_prog1, vertexShader);
-    glAttachShader(m_prog1, fragmentShader);
-    glLinkProgram(m_prog1);
-
-    // Delete the shaders as the program has them now
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    compileProgram(
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE,
+        m_prog1);
 }
 
 void GLPrograms::compileProgram2() {
-    const GLchar* VERTEX_SHADER_SOURCE[] = {
+    const GLchar* VERTEX_SHADER_SOURCE =
         "#version 410 core                          \n"
         "                                           \n"
         "layout (location = 0) in vec4 vertex_pos;  \n"
@@ -104,36 +117,19 @@ void GLPrograms::compileProgram2() {
         "    trans[3][1] = inst_pos.y;              \n"
         "    gl_Position = trans * vertex_pos;      \n"
         "    vs_color = inst_color;                 \n"
-        "}                                          \n"
-    };
+        "}                                          \n";
 
-    const GLchar* FRAGMENT_SHADER_SOURCE[] = {
+    const GLchar* FRAGMENT_SHADER_SOURCE =
         "#version 410 core      \n"
         "                       \n"
         "in vec4 vs_color;      \n"
         "out vec4 color;        \n"
         "void main(void) {      \n"
         "    color = vs_color;  \n"
-        "}                      \n"
-    };
+        "}                      \n";
 
-    // vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, VERTEX_SHADER_SOURCE, nullptr);
-    glCompileShader(vertexShader);
-
-    // fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, FRAGMENT_SHADER_SOURCE, nullptr);
-    glCompileShader(fragmentShader);
-
-    // Create program, attach shaders to it, and link it
-    m_prog2 = glCreateProgram();
-    glAttachShader(m_prog2, vertexShader);
-    glAttachShader(m_prog2, fragmentShader);
-    glLinkProgram(m_prog2);
-
-    // Delete the shaders as the program has them now
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    compileProgram(
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE,
+        m_prog2);
 }

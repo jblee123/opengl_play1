@@ -294,12 +294,14 @@ void initializeGL() {
     glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
 }
 
+GLuint g_memberPosOffset;
+
 void setupData() {
     GLfloat memberCoords[] = {
-        -0.02f, -0.02f, 0.0f, 1,
-         0.0f,   0.05f, 0.0f, 1,
-         0.0f,   0.0f,  0.0f, 1,
-         0.02f, -0.02f, 0.0f, 1
+        -0.02f, -0.02f, 0.0f, 1.0f,
+         0.0f,   0.05f, 0.0f, 1.0f,
+         0.0f,   0.0f,  0.0f, 1.0f,
+         0.02f, -0.02f, 0.0f, 1.0f
     };
 
     const GLuint MEMBER_COORDS_OFFSET = 0;
@@ -309,6 +311,7 @@ void setupData() {
     const GLuint MEMBER_POS_OFFSET = MEMBER_COLOR_OFFSET + MEMBER_COLOR_SIZE;
     const GLuint MEMBER_POS_SIZE = sizeof(GLfloat) * 5 * g_swarm.size();
     const GLuint SWARM_BUFFER_SIZE = MEMBER_COORDS_SIZE + MEMBER_COLOR_SIZE + MEMBER_POS_SIZE;
+    g_memberPosOffset = MEMBER_POS_OFFSET;
 
     glGenVertexArrays(1, &g_membersVao);
     glGenBuffers(1, &g_membersVbo);
@@ -318,32 +321,15 @@ void setupData() {
 
     glBufferSubData(GL_ARRAY_BUFFER, MEMBER_COORDS_OFFSET, MEMBER_COORDS_SIZE, memberCoords);
 
-    int posIdx = 0;
-    int colorIdx = 0;
-    GLfloat* memberPositions = new GLfloat[5 * g_swarm.size()];
-    GLfloat* memberColor = new GLfloat[4 * g_swarm.size()];
+    float* colorPtr = (float*) ((char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) + MEMBER_COLOR_OFFSET);
     for (auto member : g_swarm) {
-        Position pos = member->getPos();
-        Vec3D loc = pos.getLocation();
-        memberPositions[posIdx++] = loc.getX();
-        memberPositions[posIdx++] = loc.getY();
-        memberPositions[posIdx++] = loc.getZ();
-        memberPositions[posIdx++] = 0.0f;
-        memberPositions[posIdx++] = pos.getHeading();
-
         Color color = member->getColor();
-        memberColor[colorIdx++] = (float)color.r / 255.0f;
-        memberColor[colorIdx++] = (float)color.g / 255.0f;
-        memberColor[colorIdx++] = (float)color.b / 255.0f;
-        memberColor[colorIdx++] = (float)color.a / 255.0f;
+        *colorPtr++ = (float)color.r / 255.0f;
+        *colorPtr++ = (float)color.g / 255.0f;
+        *colorPtr++ = (float)color.b / 255.0f;
+        *colorPtr++ = (float)color.a / 255.0f;
     }
-
-    glBufferSubData(GL_ARRAY_BUFFER, MEMBER_COLOR_OFFSET, MEMBER_COLOR_SIZE, memberColor);
-
-    glBufferSubData(GL_ARRAY_BUFFER, MEMBER_POS_OFFSET, MEMBER_POS_SIZE, memberPositions);
-
-    delete[] memberPositions;
-    delete[] memberColor;
+    glUnmapBuffer(GL_ARRAY_BUFFER);
 
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)MEMBER_COORDS_OFFSET);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)MEMBER_COLOR_OFFSET);
@@ -365,6 +351,18 @@ void setupData() {
 GLvoid drawScene() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    float* posPtr = (float*)((char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) + g_memberPosOffset);
+    for (auto member : g_swarm) {
+        Position pos = member->getPosForAnimation(timeGetTime());
+        Vec3D loc = pos.getLocation();
+        *posPtr++ = loc.getX();
+        *posPtr++ = loc.getY();
+        *posPtr++ = loc.getZ();
+        *posPtr++ = 0.0f;
+        *posPtr++ = pos.getHeading();
+    }
+    glUnmapBuffer(GL_ARRAY_BUFFER);
 
     glUseProgram(g_programs.getProg2());
     glBindVertexArray(g_membersVao);
