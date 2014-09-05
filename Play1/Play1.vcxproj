@@ -114,16 +114,19 @@
     <ClCompile Include="Swarm.cpp" />
     <ClCompile Include="SwarmMember.cpp" />
     <ClCompile Include="Utils.cpp" />
-    <ClCompile Include="Vec3D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h" />
     <ClInclude Include="GLPrograms.h" />
+    <ClInclude Include="Matrix4Df.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="Swarm.h" />
     <ClInclude Include="SwarmMember.h" />
+    <ClInclude Include="Matrix.h" />
     <ClInclude Include="Vec3D.h" />
+    <ClInclude Include="Vec4Df.h" />
+    <ClInclude Include="Vector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

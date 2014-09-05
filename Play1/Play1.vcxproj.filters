@@ -21,9 +21,6 @@
     <ClCompile Include="SwarmMember.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Vec3D.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Position.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -41,9 +38,6 @@
     <ClInclude Include="SwarmMember.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Vec3D.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Position.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -57,6 +51,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Vec3D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Vec4Df.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix4Df.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

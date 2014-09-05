@@ -1,14 +1,14 @@
 #include "Position.h"
 
 Position::Position() :
-    Position(Vec3D()) {
+Position(vec3df::create()) {
 }
 
-Position::Position(const Vec3D& location) :
+Position::Position(const vec3df::Vec3Df& location) :
     Position(location, 0) {
 }
 
-Position::Position(const Vec3D& location, float heading) {
+Position::Position(vec3df::Vec3Df location, float heading) {
     m_location = location;
     m_heading = heading;
 }
@@ -16,7 +16,7 @@ Position::Position(const Vec3D& location, float heading) {
 Position::~Position() {
 }
 
-Vec3D Position::getLocation() const {
+vec3df::Vec3Df Position::getLocation() const {
     return m_location;
 }
 

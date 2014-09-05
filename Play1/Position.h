@@ -6,14 +6,14 @@ class Position
 {
 public:
     Position();
-    Position(const Vec3D& location);
-    Position(const Vec3D& location, float heading);
+    Position(const vec3df::Vec3Df& location);
+    Position(vec3df::Vec3Df location, float heading);
     virtual ~Position();
 
-    Vec3D getLocation() const;
+    vec3df::Vec3Df getLocation() const;
     float getHeading() const;
     
 protected:
-    Vec3D m_location;
+    vec3df::Vec3Df m_location;
     float m_heading;
 };

@@ -1,42 +1,75 @@
 #pragma once
 
-class Vec3D
-{
-public:
-    Vec3D();
-    Vec3D(float x, float y);
-    Vec3D(float x, float y, float z);
-    virtual ~Vec3D();
+#include <math.h>
+#include "Vector.h"
 
-    float getX() const;
-    float getY() const;
-    float getZ() const;
+namespace vec3df {
 
-    Vec3D& set(float x, float y);
-    Vec3D& set(float x, float y, float z);
+typedef vec::Vector<float, 3> Vec3Df;
 
-    Vec3D& translate(float x, float y);
-    Vec3D& translate(float x, float y, float z);
+inline Vec3Df create(float x, float y, float z) {
+    Vec3Df vec;
+    vec(0) = x;
+    vec(1) = y;
+    vec(2) = z;
+    return vec;
+}
 
-    Vec3D& rotateX(float theta);
-    Vec3D& rotateY(float theta);
-    Vec3D& rotateZ(float theta);
+inline Vec3Df create(float x, float y) {
+    return create(x, y, 0);
+}
 
-    Vec3D operator+(const Vec3D& rhs) const;
-    Vec3D operator-(const Vec3D& rhs) const;
-    Vec3D operator*(float scale) const;
-    Vec3D operator/(float scale) const;
+inline Vec3Df create(float x) {
+    return create(x, 0, 0);
+}
 
-    Vec3D cross(const Vec3D& rhs) const;
-    float dot(const Vec3D& rhs) const;
+inline Vec3Df create() {
+    return create(0, 0, 0);
+}
 
-    float length() const;
-    float lengthSq() const;
+inline Vec3Df& translate(Vec3Df& vec, float x, float y, float z) {
+    vec(0) += x;
+    vec(1) += y;
+    vec(2) += z;
+    return vec;
+}
 
-    Vec3D getUnit() const;
+inline Vec3Df& rotateX(Vec3Df& vec, float theta) {
+    float c = cos(theta);
+    float s = sin(theta);
+    float y = vec(1);
+    float z = vec(2);
+    vec(1) = y * c - z * s;
+    vec(2) = y * s + z * c;
+    return vec;
+}
 
-protected:
-    float m_x;
-    float m_y;
-    float m_z;
-};
+inline Vec3Df& rotateY(Vec3Df& vec, float theta) {
+    float c = cos(theta);
+    float s = sin(theta);
+    float x = vec(0);
+    float z = vec(2);
+    vec(0) = x * c + z * s;
+    vec(2) = - x * s + z * c;
+    return vec;
+}
+
+inline Vec3Df& rotateZ(Vec3Df& vec, float theta) {
+    float c = cos(theta);
+    float s = sin(theta);
+    float x = vec(0);
+    float y = vec(1);
+    vec(0) = x * c - y * s;
+    vec(1) = x * s + y * c;
+    return vec;
+}
+
+inline Vec3Df cross(const Vec3Df& vec, const Vec3Df& rhs) {
+    Vec3Df result;
+    result(0) = vec(1) * rhs(2) - vec(2) * rhs(1);
+    result(1) = vec(2) * rhs(0) - vec(0) * rhs(2);
+    result(2) = vec(0) * rhs(1) - vec(1) * rhs(0);
+    return result;
+}
+
+} // of namespace vec3df

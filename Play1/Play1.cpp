@@ -1,3 +1,7 @@
+//#include "Matrix.h"
+#include "Vector.h"
+#include "Vec3D.h"
+
 #include <windows.h>
 #include <windowsx.h>
 
@@ -10,6 +14,7 @@
 #include "SwarmMember.h"
 #include "GLPrograms.h"
 #include "Utils.h"
+
 
 // Windows globals, defines, and prototypes
 WCHAR szAppName[] = L"Play1";
@@ -27,6 +32,7 @@ void doCleanup(HWND);
 void CALLBACK DrawTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 
 GLvoid resize(GLsizei, GLsizei);
+void redoModelViewMatrix();
 void initializeGL();
 GLvoid drawScene();
 void createSwarm();
@@ -42,6 +48,10 @@ GLuint g_membersVao;
 GLuint g_membersVbo;
 
 const UINT_PTR DRAW_TIMER_ID = 1;
+
+vec3df::Vec3Df g_cameraPos = vec3df::create(50, 50, 25);
+vec3df::Vec3Df g_cameraUp = vec3df::create(0, 0, 1);
+vec3df::Vec3Df g_cameraDir = vec3df::create(0, 0, -1);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     MSG msg;
@@ -236,6 +246,14 @@ GLvoid resize(GLsizei width, GLsizei height) {
     //glLoadIdentity();
     //gluPerspective(45.0, aspect, 3.0, 7.0);
     //glMatrixMode(GL_MODELVIEW);
+
+    redoModelViewMatrix();
+}
+
+void redoModelViewMatrix() {
+    vec3df::Vec3Df fwd = g_cameraDir.getUnit();
+    vec3df::Vec3Df side = vec3df::cross(fwd, g_cameraUp);
+    vec3df::Vec3Df up = vec3df::cross(side, fwd);
 }
 
 void createSwarm() {
@@ -245,7 +263,7 @@ void createSwarm() {
             new SwarmMember(
                 i + 1,
                 Position(
-                    Vec3D(
+                    vec3df::create(
                         randf() * 2 - 1,
                         randf() * 2 - 1,
                         -1.0f),
@@ -355,10 +373,10 @@ GLvoid drawScene() {
     float* posPtr = (float*)((char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) + g_memberPosOffset);
     for (auto member : g_swarm) {
         Position pos = member->getPosForAnimation(timeGetTime());
-        Vec3D loc = pos.getLocation();
-        *posPtr++ = loc.getX();
-        *posPtr++ = loc.getY();
-        *posPtr++ = loc.getZ();
+        vec3df::Vec3Df loc = pos.getLocation();
+        *posPtr++ = loc(0);
+        *posPtr++ = loc(1);
+        *posPtr++ = loc(2);
         *posPtr++ = 0.0f;
         *posPtr++ = pos.getHeading();
     }
