@@ -119,6 +119,7 @@
     <ClInclude Include="Color.h" />
     <ClInclude Include="GLPrograms.h" />
     <ClInclude Include="Matrix4Df.h" />
+    <ClInclude Include="Projection.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="Swarm.h" />

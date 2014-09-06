@@ -85,7 +85,7 @@ template <class T, int D>
 Vector<T, D> Vector<T, D>::operator*(T multiplier) const {
     Vector<T, D> result;
     for (int i = 0; i < D; i++) {
-        result(i) = m_vec[i] + multiplier;
+        result(i) = m_vec[i] * multiplier;
     }
     return result;
 }
@@ -94,7 +94,7 @@ template <class T, int D>
 Vector<T, D> Vector<T, D>::operator/(T divisor) const {
     Vector<T, D> result;
     for (int i = 0; i < D; i++) {
-        result(i) = m_vec[i] + divisor;
+        result(i) = m_vec[i] / divisor;
     }
     return result;
 }

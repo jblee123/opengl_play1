@@ -68,5 +68,8 @@
     <ClInclude Include="Matrix4Df.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Projection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -14,6 +14,7 @@ public:
 
     GLuint getProg1() const;
     GLuint getProg2() const;
+    GLuint getProg3() const;
 
 protected:
     void compileProgram(
@@ -23,7 +24,11 @@ protected:
 
     void compileProgram1();
     void compileProgram2();
+    void compileProgram3();
+
+    static void cleanupPrograms(GLuint& prog);
 
     GLuint m_prog1;
     GLuint m_prog2;
+    GLuint m_prog3;
 };

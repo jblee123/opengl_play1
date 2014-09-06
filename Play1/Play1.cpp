@@ -1,7 +1,3 @@
-//#include "Matrix.h"
-#include "Vector.h"
-#include "Vec3D.h"
-
 #include <windows.h>
 #include <windowsx.h>
 
@@ -9,6 +5,11 @@
 
 #include <GL/glew.h>
 #include <GL/Wglew.h>
+
+#include "Matrix4Df.h"
+#include "Vector.h"
+#include "Vec3D.h"
+#include "Projection.h"
 
 //#include "Swarm.h"
 #include "SwarmMember.h"
@@ -31,12 +32,13 @@ BOOL setupPixelFormat(HDC);
 void doCleanup(HWND);
 void CALLBACK DrawTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 
-GLvoid resize(GLsizei, GLsizei);
+GLvoid resize(int width, int height);
 void redoModelViewMatrix();
+void redoProjectionMatrix(int width, int height);
 void initializeGL();
 GLvoid drawScene();
-void createSwarm();
-void setupData();
+void createSwarm(int width, int height);
+void setupData(int width, int height);
 
 const int SWARM_SIZE = 500;
 //Swarm g_swarm;
@@ -49,9 +51,16 @@ GLuint g_membersVbo;
 
 const UINT_PTR DRAW_TIMER_ID = 1;
 
-vec3df::Vec3Df g_cameraPos = vec3df::create(50, 50, 25);
-vec3df::Vec3Df g_cameraUp = vec3df::create(0, 0, 1);
-vec3df::Vec3Df g_cameraDir = vec3df::create(0, 0, -1);
+//vec3df::Vec3Df g_cameraPos = vec3df::create(0, 0, 1);
+//vec3df::Vec3Df g_cameraUp = vec3df::create(0, 1, 0);
+//vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, -1);
+vec3df::Vec3Df g_cameraPos = vec3df::create(0, 0, 1);
+vec3df::Vec3Df g_cameraUp = vec3df::create(0, 1, 0);
+vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, -1);
+//vec3df::Vec3Df g_cameraTarget = vec3df::create(-0.001, 0, -1);
+
+mat4df::Mat4Df g_modelView;
+mat4df::Mat4Df g_projection;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     MSG msg;
@@ -96,11 +105,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ::UpdateWindow(ghWnd);
 
-    createSwarm();
-    setupData();
-
-    ::SetTimer(ghWnd, DRAW_TIMER_ID, 0, DrawTimerProc);
-
     while (::GetMessage(&msg, NULL, 0, 0)) {
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);
@@ -134,6 +138,12 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         GetClientRect(hWnd, &rect);
         resize(rect.right, rect.bottom); // added in leiu of passing dims to initialize
         g_programs.compilePrograms();
+
+        createSwarm(rect.right, rect.bottom);
+        setupData(rect.right, rect.bottom);
+
+        ::SetTimer(ghWnd, DRAW_TIMER_ID, 0, DrawTimerProc);
+
         break;
 
     case WM_PAINT:
@@ -235,7 +245,7 @@ BOOL setupPixelFormat(HDC hdc) {
 
 // OpenGL code
 
-GLvoid resize(GLsizei width, GLsizei height) {
+GLvoid resize(int width, int height) {
     //GLfloat aspect;
 
     glViewport(0, 0, width, height);
@@ -248,26 +258,38 @@ GLvoid resize(GLsizei width, GLsizei height) {
     //glMatrixMode(GL_MODELVIEW);
 
     redoModelViewMatrix();
+    redoProjectionMatrix(width, height);
 }
 
 void redoModelViewMatrix() {
-    vec3df::Vec3Df fwd = g_cameraDir.getUnit();
-    vec3df::Vec3Df side = vec3df::cross(fwd, g_cameraUp);
-    vec3df::Vec3Df up = vec3df::cross(side, fwd);
+    g_modelView = projection::createLookAt(
+        g_cameraPos, g_cameraTarget, g_cameraUp);
 }
 
-void createSwarm() {
+void redoProjectionMatrix(int width, int height) {
+    g_projection = projection::createPerspective(0, 0, (float)width, (float)height, 1, -1000);
+    //g_projection = projection::createOrtho(0, 0, (float)width, (float)height, 1, -1000);
+}
+
+void createSwarm(int width, int height) {
     for (int i = 0; i < SWARM_SIZE; i++) {
-        SwarmMember* member = //(i == 0) ?
-            //new SwarmMember(i + 1) :
+        SwarmMember* member = (i == 0) ?
+            new SwarmMember(
+                i + 1, 
+                Position(
+                    vec3df::create(
+                        width / 2.0f,
+                        height / 2.0f,
+                        -1.0f),
+                    0)) :
             new SwarmMember(
                 i + 1,
                 Position(
                     vec3df::create(
-                        randf() * 2 - 1,
-                        randf() * 2 - 1,
+                        randf() * width,
+                        randf() * height,
                         -1.0f),
-                    randAngle()));
+                    randf() * (2 * M_PI)));
         //g_swarm.addMember(member);
         Color color;
         color.r = rand() % 256;
@@ -314,12 +336,18 @@ void initializeGL() {
 
 GLuint g_memberPosOffset;
 
-void setupData() {
+void setupData(int width, int height) {
+    //GLfloat memberCoords[] = {
+    //    -0.02f, -0.02f, 0.0f, 1.0f,
+    //     0.0f,   0.05f, 0.0f, 1.0f,
+    //     0.0f,   0.0f,  0.0f, 1.0f,
+    //     0.02f, -0.02f, 0.0f, 1.0f
+    //};
     GLfloat memberCoords[] = {
-        -0.02f, -0.02f, 0.0f, 1.0f,
-         0.0f,   0.05f, 0.0f, 1.0f,
-         0.0f,   0.0f,  0.0f, 1.0f,
-         0.02f, -0.02f, 0.0f, 1.0f
+        -10,  10, 0, 1,
+          0, -25, 0, 1,
+          0,   0, 0, 1,
+         10,  10, 0, 1
     };
 
     const GLuint MEMBER_COORDS_OFFSET = 0;
@@ -369,10 +397,16 @@ void setupData() {
 GLvoid drawScene() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    const GLuint MODEL_VIEW_LOC = 0;
+    const GLuint PROJ_LOC = 1;
+    glUniformMatrix4fv(MODEL_VIEW_LOC, 1, GL_FALSE, g_modelView.getBuf());
+    glUniformMatrix4fv(PROJ_LOC, 1, GL_FALSE, g_projection.getBuf());
 
     float* posPtr = (float*)((char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) + g_memberPosOffset);
     for (auto member : g_swarm) {
         Position pos = member->getPosForAnimation(timeGetTime());
+        //Position pos = member->getPos();
         vec3df::Vec3Df loc = pos.getLocation();
         *posPtr++ = loc(0);
         *posPtr++ = loc(1);
@@ -382,7 +416,7 @@ GLvoid drawScene() {
     }
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
-    glUseProgram(g_programs.getProg2());
+    glUseProgram(g_programs.getProg3());
     glBindVertexArray(g_membersVao);
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, SWARM_SIZE);
 
