@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <windowsx.h>
 
+#include <algorithm>
 #include <vector>
 
 #include <GL/glew.h>
@@ -23,9 +24,12 @@ HWND  ghWnd;
 HDC   ghDC;
 HGLRC ghRC;
 
-//const int WIDTH = 1200;
-const int WIDTH = 800;
-const int HEIGHT = 800;
+const int GRID_WIDTH = 800;
+const int GRID_HEIGHT = 800;
+
+const int GRID_BUFFER = 100;
+const int WIN_WIDTH = GRID_WIDTH + (2 * GRID_BUFFER);
+const int WIN_HEIGHT = GRID_HEIGHT + (2 * GRID_BUFFER);
 
 LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL setupPixelFormat(HDC);
@@ -57,10 +61,20 @@ const UINT_PTR DRAW_TIMER_ID = 1;
 //vec3df::Vec3Df g_cameraPos = vec3df::create(0, 0, 1);
 //vec3df::Vec3Df g_cameraUp = vec3df::create(0, 1, 0);
 //vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, -1);
-vec3df::Vec3Df g_cameraPos = vec3df::create(0, 0, 1);
+vec3df::Vec3Df g_cameraPos = vec3df::create(
+    ((float)GRID_WIDTH / 2),
+    ((float)GRID_HEIGHT / 2),
+    1);
 vec3df::Vec3Df g_cameraUp = vec3df::create(0, 1, 0);
-//vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, -1);
-vec3df::Vec3Df g_cameraTarget = vec3df::create(-0.001f, 0, -1);
+//vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, 0);
+vec3df::Vec3Df g_cameraTarget = vec3df::create(
+    ((float)GRID_WIDTH / 2),
+    ((float)GRID_HEIGHT / 2),
+    0);
+//vec3df::Vec3Df g_cameraTarget = vec3df::create(
+//    100,
+//    100,
+//    0);
 
 mat4df::Mat4Df g_modelView;
 mat4df::Mat4Df g_projection;
@@ -91,8 +105,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        WIDTH,
-        HEIGHT,
+        WIN_WIDTH,
+        WIN_HEIGHT,
         NULL,
         NULL,
         hInstance,
@@ -142,7 +156,7 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         resize(rect.right, rect.bottom); // added in leiu of passing dims to initialize
         g_programs.compilePrograms();
 
-        createSwarm(rect.right, rect.bottom);
+        createSwarm(GRID_WIDTH, GRID_HEIGHT);
         setupData(rect.right, rect.bottom);
 
         ::SetTimer(ghWnd, DRAW_TIMER_ID, 0, DrawTimerProc);
@@ -270,7 +284,9 @@ void redoModelViewMatrix() {
 }
 
 void redoProjectionMatrix(int width, int height) {
-    g_projection = projection::createPerspective(0, 0, (float)width, (float)height, 1, -1000);
+    float halfWidth = width / 2.0f;
+    float halfHeight = height / 2.0f;
+    g_projection = projection::createPerspective(-halfWidth, -halfHeight, halfWidth, halfHeight, 0.9, 100);
     //g_projection = projection::createOrtho(0, 0, (float)width, (float)height, 1, -1000);
 }
 
@@ -337,33 +353,54 @@ void initializeGL() {
     glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
 }
 
-GLuint g_memberPosOffset;
+GLuint g_gridPointCount;
 
-void setupData(int width, int height) {
+void setupGrid() {
+    const int GRID_SIZE = 100;
+    std::vector<GLfloat> outlineCoords;
 
-    GLfloat outlineCoords[] = {
-        0,     0,      0, 1,
-        WIDTH, 0,      0, 1,
-        WIDTH, HEIGHT, 0, 1,
-        0,     HEIGHT, 0, 1
-    };
+    int horizontalLineCount = (GRID_HEIGHT / GRID_SIZE) + 1;
+    for (int i = 0; i < horizontalLineCount; i++) {
+        int y = min(i * GRID_SIZE, GRID_HEIGHT);
+        outlineCoords.push_back((GLfloat)0);
+        outlineCoords.push_back((GLfloat)y);
+        outlineCoords.push_back((GLfloat)0);
+        outlineCoords.push_back((GLfloat)1);
+        outlineCoords.push_back((GLfloat)GRID_WIDTH);
+        outlineCoords.push_back((GLfloat)y);
+        outlineCoords.push_back((GLfloat)0);
+        outlineCoords.push_back((GLfloat)1);
+    }
 
-    //GLfloat outlineCoords[] = {
-    //    0, 0.5f, 0, 1,
-    //    1, 0, 0, 1,
-    //    1, 0.5f, 0, 1,
-    //    0, -.05f, 0, 1
-    //};
+    int verticalLineCount = (GRID_WIDTH / GRID_SIZE) + 1;
+    for (int i = 0; i < verticalLineCount; i++) {
+        int x = min(i * GRID_SIZE, GRID_WIDTH);
+        outlineCoords.push_back((GLfloat)x);
+        outlineCoords.push_back((GLfloat)0);
+        outlineCoords.push_back((GLfloat)0);
+        outlineCoords.push_back((GLfloat)1);
+        outlineCoords.push_back((GLfloat)x);
+        outlineCoords.push_back((GLfloat)GRID_HEIGHT);
+        outlineCoords.push_back((GLfloat)0);
+        outlineCoords.push_back((GLfloat)1);
+    }
 
-    const GLuint OUTLINE_BUFFER_SIZE = sizeof(outlineCoords);
+    g_gridPointCount = (horizontalLineCount + verticalLineCount) * 2;
+
+    const GLuint OUTLINE_BUFFER_SIZE = sizeof(GLfloat) * outlineCoords.size();
 
     glGenVertexArrays(1, &g_outlineVao);
     glGenBuffers(1, &g_outlineVbo);
     glBindVertexArray(g_outlineVao);
     glBindBuffer(GL_ARRAY_BUFFER, g_outlineVbo);
-    glBufferData(GL_ARRAY_BUFFER, OUTLINE_BUFFER_SIZE, outlineCoords, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, OUTLINE_BUFFER_SIZE, outlineCoords.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
+}
+
+GLuint g_memberPosOffset;
+
+void setupMembers() {
 
     //GLfloat memberCoords[] = {
     //    -0.02f, -0.02f, 0.0f, 1.0f,
@@ -372,10 +409,10 @@ void setupData(int width, int height) {
     //     0.02f, -0.02f, 0.0f, 1.0f
     //};
     GLfloat memberCoords[] = {
-        -10,  10, 0, 1,
-          0, -25, 0, 1,
-          0,   0, 0, 1,
-         10,  10, 0, 1
+        -10, 10, 0, 1,
+        0, -25, 0, 1,
+        0, 0, 0, 1,
+        10, 10, 0, 1
     };
 
     const GLuint MEMBER_COORDS_OFFSET = 0;
@@ -396,7 +433,7 @@ void setupData(int width, int height) {
 
     glBufferSubData(GL_ARRAY_BUFFER, MEMBER_COORDS_OFFSET, MEMBER_COORDS_SIZE, memberCoords);
 
-    float* colorPtr = (float*) ((char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) + MEMBER_COLOR_OFFSET);
+    float* colorPtr = (float*)((char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) + MEMBER_COLOR_OFFSET);
     for (auto member : g_swarm) {
         Color color = member->getColor();
         *colorPtr++ = (float)color.r / 255.0f;
@@ -421,10 +458,12 @@ void setupData(int width, int height) {
     glVertexAttribDivisor(3, 1);
 }
 
-GLvoid drawScene() {
+void setupData(int width, int height) {
+    setupGrid();
+    setupMembers();
+}
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+void drawGrid() {
     glUseProgram(g_programs.getSimpleProg());
 
     const GLuint PROG4_MODEL_VIEW_LOC = 0;
@@ -435,9 +474,10 @@ GLvoid drawScene() {
     glUniform4f(PROG4_COLOR_LOC, 1, 1, 0, 1);
 
     glBindVertexArray(g_outlineVao);
-    glDrawArrays(GL_LINE_STRIP, 0, 4);
+    glDrawArrays(GL_LINES, 0, g_gridPointCount);
+}
 
-
+void drawMembers() {
     glUseProgram(g_programs.getProg3());
 
     const GLuint PROG3_MODEL_VIEW_LOC = 0;
@@ -460,6 +500,18 @@ GLvoid drawScene() {
 
     glBindVertexArray(g_membersVao);
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, SWARM_SIZE);
+}
+
+void drawScene() {
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    vec4df::Vec4Df v = vec4df::create(400, 400, 0, 1);
+    vec4df::Vec4Df mv = mat4df::mul(g_modelView, v);
+    vec4df::Vec4Df proj = mat4df::mul(g_projection, mv);
+
+    drawGrid();
+    drawMembers();
 
     ::SwapBuffers(ghDC);
 }
