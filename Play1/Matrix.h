@@ -19,6 +19,8 @@ public:
     const T& operator()(int col, int row) const;
     T& operator()(int col, int row);
 
+    Matrix<T, D> operator*(const Matrix<T, D>& rhs) const;
+
     const T* getBuf() const;
 
 protected:
@@ -65,6 +67,19 @@ T& Matrix<T, D>::operator()(int col, int row) {
 template <class T, int D>
 const T* Matrix<T, D>::getBuf() const {
     return (T*)m_matrix;
+}
+
+template <class T, int D>
+Matrix<T, D> Matrix<T, D>::operator*(const Matrix<T, D>& rhs) const {
+    Matrix<T, D> result;
+    for (int col = 0; col < D; col++) {
+        for (int row = 0; row < D; row++) {
+            for (int i = 0; i < D; i++) {
+                result(col, row) += m_matrix[i][row] * rhs.m_matrix[col][i];
+            }
+        }
+    }
+    return result;
 }
 
 } // of namespace mat

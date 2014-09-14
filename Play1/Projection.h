@@ -9,6 +9,7 @@ mat4df::Mat4Df createLookAt(
     const vec3df::Vec3Df& up) {
 
     mat4df::Mat4Df mat;
+    mat.setIdentity();
 
     vec3df::Vec3Df fwd = (target - eye).getUnit();
     vec3df::Vec3Df side = vec3df::cross(fwd, up);
@@ -16,25 +17,31 @@ mat4df::Mat4Df createLookAt(
 
     mat(0, 0) = side(0);
     mat(0, 1) = side(1);
-    mat(0, 2) = side(2);
+    mat(0, 2) = -side(2);
     mat(0, 3) = 0;
 
     mat(1, 0) = upPrime(0);
     mat(1, 1) = upPrime(1);
-    mat(1, 2) = upPrime(2);
+    mat(1, 2) = -upPrime(2);
     mat(1, 3) = 0;
 
     mat(2, 0) = fwd(0);
     mat(2, 1) = fwd(1);
-    mat(2, 2) = fwd(2);
+    mat(2, 2) = -fwd(2);
     mat(2, 3) = 0;
 
-    mat(3, 0) = -eye(0);
-    mat(3, 1) = -eye(1);
-    mat(3, 2) = -eye(2);
-    mat(3, 3) = 1;
+    //mat(3, 0) = -eye(0);
+    //mat(3, 1) = -eye(1);
+    //mat(3, 2) = -eye(2);
+    //mat(3, 3) = 1;
 
-    return mat;
+    mat4df::Mat4Df mat2;
+    mat2.setIdentity();
+    mat2(3, 0) = -eye(0);
+    mat2(3, 1) = -eye(1);
+    mat2(3, 2) = -eye(2);
+
+    return mat * mat2;
 }
 
 mat4df::Mat4Df createPerspective(

@@ -44,7 +44,7 @@ GLvoid drawScene();
 void createSwarm(int width, int height);
 void setupData(int width, int height);
 
-const int SWARM_SIZE = 20;
+const int SWARM_SIZE = 50;
 //Swarm g_swarm;
 std::vector<SwarmMember*> g_swarm;
 
@@ -67,14 +67,14 @@ vec3df::Vec3Df g_cameraPos = vec3df::create(
     1);
 vec3df::Vec3Df g_cameraUp = vec3df::create(0, 1, 0);
 //vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, 0);
-vec3df::Vec3Df g_cameraTarget = vec3df::create(
-    ((float)GRID_WIDTH / 2),
-    ((float)GRID_HEIGHT / 2),
-    0);
 //vec3df::Vec3Df g_cameraTarget = vec3df::create(
-//    100,
-//    100,
+//    ((float)GRID_WIDTH / 2),
+//    ((float)GRID_HEIGHT / 2),
 //    0);
+vec3df::Vec3Df g_cameraTarget = vec3df::create(
+    ((float)GRID_WIDTH / 2) + 0.0005,
+    ((float)GRID_HEIGHT / 2) + 0.0005,
+    0);
 
 mat4df::Mat4Df g_modelView;
 mat4df::Mat4Df g_projection;
@@ -286,7 +286,7 @@ void redoModelViewMatrix() {
 void redoProjectionMatrix(int width, int height) {
     float halfWidth = width / 2.0f;
     float halfHeight = height / 2.0f;
-    g_projection = projection::createPerspective(-halfWidth, -halfHeight, halfWidth, halfHeight, 0.9, 100);
+    g_projection = projection::createPerspective(-halfWidth, -halfHeight, halfWidth, halfHeight, 0.5, 2);
     //g_projection = projection::createOrtho(0, 0, (float)width, (float)height, 1, -1000);
 }
 
@@ -503,7 +503,6 @@ void drawMembers() {
 }
 
 void drawScene() {
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     vec4df::Vec4Df v = vec4df::create(400, 400, 0, 1);
