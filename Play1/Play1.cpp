@@ -40,7 +40,7 @@ GLvoid drawScene();
 void createSwarm(int width, int height);
 void setupData(int width, int height);
 
-const int SWARM_SIZE = 500;
+const int SWARM_SIZE = 20;
 //Swarm g_swarm;
 std::vector<SwarmMember*> g_swarm;
 
@@ -49,6 +49,9 @@ GLPrograms g_programs;
 GLuint g_membersVao;
 GLuint g_membersVbo;
 
+GLuint g_outlineVao;
+GLuint g_outlineVbo;
+
 const UINT_PTR DRAW_TIMER_ID = 1;
 
 //vec3df::Vec3Df g_cameraPos = vec3df::create(0, 0, 1);
@@ -56,8 +59,8 @@ const UINT_PTR DRAW_TIMER_ID = 1;
 //vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, -1);
 vec3df::Vec3Df g_cameraPos = vec3df::create(0, 0, 1);
 vec3df::Vec3Df g_cameraUp = vec3df::create(0, 1, 0);
-vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, -1);
-//vec3df::Vec3Df g_cameraTarget = vec3df::create(-0.001, 0, -1);
+//vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, -1);
+vec3df::Vec3Df g_cameraTarget = vec3df::create(-0.001f, 0, -1);
 
 mat4df::Mat4Df g_modelView;
 mat4df::Mat4Df g_projection;
@@ -289,7 +292,7 @@ void createSwarm(int width, int height) {
                         randf() * width,
                         randf() * height,
                         -1.0f),
-                    randf() * (2 * M_PI)));
+                    randf() * (2 * (float)M_PI)));
         //g_swarm.addMember(member);
         Color color;
         color.r = rand() % 256;
@@ -337,6 +340,31 @@ void initializeGL() {
 GLuint g_memberPosOffset;
 
 void setupData(int width, int height) {
+
+    GLfloat outlineCoords[] = {
+        0,     0,      0, 1,
+        WIDTH, 0,      0, 1,
+        WIDTH, HEIGHT, 0, 1,
+        0,     HEIGHT, 0, 1
+    };
+
+    //GLfloat outlineCoords[] = {
+    //    0, 0.5f, 0, 1,
+    //    1, 0, 0, 1,
+    //    1, 0.5f, 0, 1,
+    //    0, -.05f, 0, 1
+    //};
+
+    const GLuint OUTLINE_BUFFER_SIZE = sizeof(outlineCoords);
+
+    glGenVertexArrays(1, &g_outlineVao);
+    glGenBuffers(1, &g_outlineVbo);
+    glBindVertexArray(g_outlineVao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_outlineVbo);
+    glBufferData(GL_ARRAY_BUFFER, OUTLINE_BUFFER_SIZE, outlineCoords, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+
     //GLfloat memberCoords[] = {
     //    -0.02f, -0.02f, 0.0f, 1.0f,
     //     0.0f,   0.05f, 0.0f, 1.0f,
@@ -357,6 +385,7 @@ void setupData(int width, int height) {
     const GLuint MEMBER_POS_OFFSET = MEMBER_COLOR_OFFSET + MEMBER_COLOR_SIZE;
     const GLuint MEMBER_POS_SIZE = sizeof(GLfloat) * 5 * g_swarm.size();
     const GLuint SWARM_BUFFER_SIZE = MEMBER_COORDS_SIZE + MEMBER_COLOR_SIZE + MEMBER_POS_SIZE;
+
     g_memberPosOffset = MEMBER_POS_OFFSET;
 
     glGenVertexArrays(1, &g_membersVao);
@@ -390,18 +419,31 @@ void setupData(int width, int height) {
     glVertexAttribDivisor(1, 1);
     glVertexAttribDivisor(2, 1);
     glVertexAttribDivisor(3, 1);
-
-    glBindVertexArray(g_membersVao);
 }
 
 GLvoid drawScene() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    const GLuint MODEL_VIEW_LOC = 0;
-    const GLuint PROJ_LOC = 1;
-    glUniformMatrix4fv(MODEL_VIEW_LOC, 1, GL_FALSE, g_modelView.getBuf());
-    glUniformMatrix4fv(PROJ_LOC, 1, GL_FALSE, g_projection.getBuf());
+
+    glUseProgram(g_programs.getSimpleProg());
+
+    const GLuint PROG4_MODEL_VIEW_LOC = 0;
+    const GLuint PROG4_PROJ_LOC = 1;
+    const GLuint PROG4_COLOR_LOC = 2;
+    glUniformMatrix4fv(PROG4_MODEL_VIEW_LOC, 1, GL_FALSE, g_modelView.getBuf());
+    glUniformMatrix4fv(PROG4_PROJ_LOC, 1, GL_FALSE, g_projection.getBuf());
+    glUniform4f(PROG4_COLOR_LOC, 1, 1, 0, 1);
+
+    glBindVertexArray(g_outlineVao);
+    glDrawArrays(GL_LINE_STRIP, 0, 4);
+
+
+    glUseProgram(g_programs.getProg3());
+
+    const GLuint PROG3_MODEL_VIEW_LOC = 0;
+    const GLuint PROG3_PROJ_LOC = 1;
+    glUniformMatrix4fv(PROG3_MODEL_VIEW_LOC, 1, GL_FALSE, g_modelView.getBuf());
+    glUniformMatrix4fv(PROG3_PROJ_LOC, 1, GL_FALSE, g_projection.getBuf());
 
     float* posPtr = (float*)((char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) + g_memberPosOffset);
     for (auto member : g_swarm) {
@@ -416,7 +458,6 @@ GLvoid drawScene() {
     }
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
-    glUseProgram(g_programs.getProg3());
     glBindVertexArray(g_membersVao);
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, SWARM_SIZE);
 

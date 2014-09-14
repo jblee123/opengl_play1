@@ -3,6 +3,7 @@
 #include "GLPrograms.h"
 
 GLPrograms::GLPrograms() :
+    m_simpleProg(0),
     m_prog1(0),
     m_prog2(0),
     m_prog3(0) {
@@ -12,12 +13,13 @@ GLPrograms::~GLPrograms() {
 }
 
 void GLPrograms::compilePrograms() {
+    compileSimpleProgram();
     compileProgram1();
     compileProgram2();
     compileProgram3();
 }
 
-void GLPrograms::cleanupPrograms(GLuint& prog) {
+void GLPrograms::cleanupProgram(GLuint& prog) {
     if (prog) {
         glDeleteProgram(prog);
         prog = 0;
@@ -25,9 +27,14 @@ void GLPrograms::cleanupPrograms(GLuint& prog) {
 }
 
 void GLPrograms::cleanupPrograms() {
-    cleanupPrograms(m_prog1);
-    cleanupPrograms(m_prog2);
-    cleanupPrograms(m_prog3);
+    cleanupProgram(m_simpleProg);
+    cleanupProgram(m_prog1);
+    cleanupProgram(m_prog2);
+    cleanupProgram(m_prog3);
+}
+
+GLuint GLPrograms::getSimpleProg() const {
+    return m_simpleProg;
 }
 
 GLuint GLPrograms::getProg1() const {
@@ -72,6 +79,43 @@ void GLPrograms::compileProgram(
     // Delete the shaders as the program has them now
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+}
+
+void GLPrograms::compileSimpleProgram() {
+    const GLchar* VERTEX_SHADER_SOURCE =
+        "#version 410 core                                      \n"
+        "#extension GL_ARB_explicit_uniform_location : require  \n"
+        "                                                       \n"
+        "layout (location = 0) in vec4 vertex_pos;              \n"
+        "                                                       \n"
+        "layout (location = 0) uniform mat4 mv_matrix;          \n"
+        "layout (location = 1) uniform mat4 proj_matrix;        \n"
+        "layout (location = 2) uniform vec4 color;              \n"
+        "                                                       \n"
+        "out vec4 vs_color;                                     \n"
+        "                                                       \n"
+        "void main(void) {                                      \n"
+        "    gl_Position =                                      \n"
+        "        proj_matrix *                                  \n"
+        "        mv_matrix *                                    \n"
+        "        vertex_pos;                                    \n"
+        "    vs_color = color;                                  \n"
+        "}                                                      \n";
+
+    const GLchar* FRAGMENT_SHADER_SOURCE =
+        "#version 410 core      \n"
+        "                       \n"
+        "in vec4 vs_color;      \n"
+        "out vec4 color;        \n"
+        "void main(void) {      \n"
+        "    color = vec4(0, 1, 0, 1);  \n"
+        "    color = vs_color;  \n"
+        "}                      \n";
+
+    compileProgram(
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE,
+        m_simpleProg);
 }
 
 void GLPrograms::compileProgram1() {
