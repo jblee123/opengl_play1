@@ -28,8 +28,8 @@ const int GRID_WIDTH = 800;
 const int GRID_HEIGHT = 800;
 
 const int GRID_BUFFER = 100;
-const int WIN_WIDTH = GRID_WIDTH + (2 * GRID_BUFFER);
-const int WIN_HEIGHT = GRID_HEIGHT + (2 * GRID_BUFFER);
+const int WIN_WIDTH = GRID_WIDTH + (6 * GRID_BUFFER);
+const int WIN_HEIGHT = GRID_HEIGHT + (3 * GRID_BUFFER);
 
 LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL setupPixelFormat(HDC);
@@ -44,7 +44,7 @@ GLvoid drawScene();
 void createSwarm(int width, int height);
 void setupData(int width, int height);
 
-const int SWARM_SIZE = 50;
+const int SWARM_SIZE = 500;
 //Swarm g_swarm;
 std::vector<SwarmMember*> g_swarm;
 
@@ -62,9 +62,9 @@ const UINT_PTR DRAW_TIMER_ID = 1;
 //vec3df::Vec3Df g_cameraUp = vec3df::create(0, 1, 0);
 //vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, -1);
 vec3df::Vec3Df g_cameraPos = vec3df::create(
-    ((float)GRID_WIDTH / 2),
+    ((float)GRID_WIDTH / 2) - 100,
     ((float)GRID_HEIGHT / 2),
-    1);
+    ((float)GRID_HEIGHT / 2));
 vec3df::Vec3Df g_cameraUp = vec3df::create(0, 1, 0);
 //vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, 0);
 //vec3df::Vec3Df g_cameraTarget = vec3df::create(
@@ -72,8 +72,8 @@ vec3df::Vec3Df g_cameraUp = vec3df::create(0, 1, 0);
 //    ((float)GRID_HEIGHT / 2),
 //    0);
 vec3df::Vec3Df g_cameraTarget = vec3df::create(
-    ((float)GRID_WIDTH / 2) + 0.0005,
-    ((float)GRID_HEIGHT / 2) + 0.0005,
+    ((float)GRID_WIDTH / 2) + 0,
+    ((float)GRID_HEIGHT / 2),
     0);
 
 mat4df::Mat4Df g_modelView;
@@ -130,8 +130,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 }
 
 void CALLBACK DrawTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-    const int TARGET_FPS = 60;
-    const UINT TIME_PER_FRAME = 1000 / TARGET_FPS;
+    ::KillTimer(hwnd, idEvent);
+
+    const float TARGET_FPS = 60;
+    const UINT TIME_PER_FRAME = (UINT)(1000 / TARGET_FPS);
     ::SetTimer(ghWnd, DRAW_TIMER_ID, TIME_PER_FRAME, DrawTimerProc);
 
     drawScene();
@@ -286,7 +288,16 @@ void redoModelViewMatrix() {
 void redoProjectionMatrix(int width, int height) {
     float halfWidth = width / 2.0f;
     float halfHeight = height / 2.0f;
-    g_projection = projection::createPerspective(-halfWidth, -halfHeight, halfWidth, halfHeight, 0.5, 2);
+
+    const float NEAR_DIST = 0.5f;
+    const float FAR_DIST = max(width, height);
+
+    float sideClipRatio = NEAR_DIST / g_cameraPos(0);
+    float widthDist = sideClipRatio * (width / 2.0f);
+    float heightDist = sideClipRatio * (height / 2.0f);
+
+    //g_projection = projection::createPerspective(-halfWidth, -halfHeight, halfWidth, halfHeight, NEAR_DIST, FAR_DIST);
+    g_projection = projection::createPerspective(-widthDist, -heightDist, widthDist, heightDist, NEAR_DIST, FAR_DIST);
     //g_projection = projection::createOrtho(0, 0, (float)width, (float)height, 1, -1000);
 }
 
