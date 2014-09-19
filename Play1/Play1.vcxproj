@@ -111,6 +111,7 @@
     <ClCompile Include="GLPrograms.cpp" />
     <ClCompile Include="Play1.cpp" />
     <ClCompile Include="Position.cpp" />
+    <ClCompile Include="Projection.cpp" />
     <ClCompile Include="Swarm.cpp" />
     <ClCompile Include="SwarmMember.cpp" />
     <ClCompile Include="Utils.cpp" />

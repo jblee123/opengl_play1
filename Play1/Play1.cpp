@@ -219,8 +219,8 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 }
 
 void doCleanup(HWND hWnd) {
-
     glDeleteVertexArrays(1, &g_membersVao);
+    glDeleteVertexArrays(1, &g_outlineVao);
     g_programs.cleanupPrograms();
 
     if (ghRC) {
@@ -285,20 +285,28 @@ void redoModelViewMatrix() {
         g_cameraPos, g_cameraTarget, g_cameraUp);
 }
 
-void redoProjectionMatrix(int width, int height) {
-    float halfWidth = width / 2.0f;
-    float halfHeight = height / 2.0f;
+//void redoProjectionMatrix(int width, int height) {
+//    float halfWidth = width / 2.0f;
+//    float halfHeight = height / 2.0f;
+//
+//    const float NEAR_DIST = 0.5f;
+//    const float FAR_DIST = max(width, height);
+//
+//    float sideClipRatio = NEAR_DIST / g_cameraPos(0);
+//    float widthDist = sideClipRatio * (width / 2.0f);
+//    float heightDist = sideClipRatio * (height / 2.0f);
+//
+//    //g_projection = projection::createPerspective(-halfWidth, -halfHeight, halfWidth, halfHeight, NEAR_DIST, FAR_DIST);
+//    g_projection = projection::createPerspective(-widthDist, -heightDist, widthDist, heightDist, NEAR_DIST, FAR_DIST);
+//    //g_projection = projection::createOrtho(0, 0, (float)width, (float)height, 1, -1000);
+//}
 
+void redoProjectionMatrix(int width, int height) {
     const float NEAR_DIST = 0.5f;
     const float FAR_DIST = max(width, height);
+    const float FOV = 120.0f;
 
-    float sideClipRatio = NEAR_DIST / g_cameraPos(0);
-    float widthDist = sideClipRatio * (width / 2.0f);
-    float heightDist = sideClipRatio * (height / 2.0f);
-
-    //g_projection = projection::createPerspective(-halfWidth, -halfHeight, halfWidth, halfHeight, NEAR_DIST, FAR_DIST);
-    g_projection = projection::createPerspective(-widthDist, -heightDist, widthDist, heightDist, NEAR_DIST, FAR_DIST);
-    //g_projection = projection::createOrtho(0, 0, (float)width, (float)height, 1, -1000);
+    g_projection = projection::createPerspective(FOV, width, height, NEAR_DIST, FAR_DIST);
 }
 
 void createSwarm(int width, int height) {
