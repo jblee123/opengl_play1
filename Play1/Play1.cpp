@@ -16,7 +16,7 @@
 #include "SwarmMember.h"
 #include "GLPrograms.h"
 #include "Utils.h"
-
+#include "FrameRateCounter.h"
 
 // Windows globals, defines, and prototypes
 WCHAR szAppName[] = L"Play1";
@@ -79,6 +79,8 @@ vec3df::Vec3Df g_cameraTarget = vec3df::create(
 mat4df::Mat4Df g_modelView;
 mat4df::Mat4Df g_projection;
 
+FrameRateCounter g_frameRateCounter(5000);
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     MSG msg;
     WNDCLASS wndclass;
@@ -121,6 +123,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ::ShowWindow(ghWnd, nCmdShow);
 
     ::UpdateWindow(ghWnd);
+
+    ::AllocConsole();
+    freopen("conin$", "r", stdin);
+    freopen("conout$", "w", stdout);
+    freopen("conout$", "w", stderr);
 
     while (::GetMessage(&msg, NULL, 0, 0)) {
         ::TranslateMessage(&msg);
@@ -219,6 +226,9 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 }
 
 void doCleanup(HWND hWnd) {
+
+    ::FreeConsole();
+
     glDeleteVertexArrays(1, &g_membersVao);
     glDeleteVertexArrays(1, &g_outlineVao);
     g_programs.cleanupPrograms();
@@ -303,10 +313,10 @@ void redoModelViewMatrix() {
 
 void redoProjectionMatrix(int width, int height) {
     const float NEAR_DIST = 0.5f;
-    const float FAR_DIST = max(width, height);
+    const float FAR_DIST = max((float)width, (float)height);
     const float FOV = 120.0f;
 
-    g_projection = projection::createPerspective(FOV, width, height, NEAR_DIST, FAR_DIST);
+    g_projection = projection::createPerspective(FOV, (float)width, (float)height, NEAR_DIST, FAR_DIST);
 }
 
 void createSwarm(int width, int height) {
@@ -521,6 +531,7 @@ void drawMembers() {
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, SWARM_SIZE);
 }
 
+unsigned int g_lastFrameRatePrintTime = 0;
 void drawScene() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -530,6 +541,13 @@ void drawScene() {
 
     drawGrid();
     drawMembers();
+
+    DWORD currentTime = timeGetTime();
+    float frameRate = g_frameRateCounter.incorportateTime(currentTime);
+    if ((currentTime - g_lastFrameRatePrintTime) > 1000) {
+        printf("fps: %f\n", frameRate);
+        g_lastFrameRatePrintTime = currentTime;
+    }
 
     ::SwapBuffers(ghDC);
 }
