@@ -9,10 +9,10 @@
 
 #include "Matrix4Df.h"
 #include "Vector.h"
-#include "Vec3D.h"
+#include "Vec3Df.h"
 #include "Projection.h"
 
-//#include "Swarm.h"
+#include "Camera.h"
 #include "SwarmMember.h"
 #include "GLPrograms.h"
 #include "Utils.h"
@@ -30,6 +30,9 @@ const int GRID_HEIGHT = 800;
 const int GRID_BUFFER = 100;
 const int WIN_WIDTH = GRID_WIDTH + (6 * GRID_BUFFER);
 const int WIN_HEIGHT = GRID_HEIGHT + (3 * GRID_BUFFER);
+
+const float MOVE_AMOUNT = 5;
+const float SPIN_AMOUNT = degToRad(2.0f);
 
 LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL setupPixelFormat(HDC);
@@ -56,30 +59,26 @@ GLuint g_membersVbo;
 GLuint g_outlineVao;
 GLuint g_outlineVbo;
 
+GLuint g_dotVao;
+GLuint g_dotVbo;
+
 const UINT_PTR DRAW_TIMER_ID = 1;
 
-//vec3df::Vec3Df g_cameraPos = vec3df::create(0, 0, 1);
-//vec3df::Vec3Df g_cameraUp = vec3df::create(0, 1, 0);
-//vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, -1);
-vec3df::Vec3Df g_cameraPos = vec3df::create(
-    ((float)GRID_WIDTH / 2) - 100,
-    ((float)GRID_HEIGHT / 2),
-    ((float)GRID_HEIGHT / 2));
-vec3df::Vec3Df g_cameraUp = vec3df::create(0, 1, 0);
-//vec3df::Vec3Df g_cameraTarget = vec3df::create(0, 0, 0);
-//vec3df::Vec3Df g_cameraTarget = vec3df::create(
-//    ((float)GRID_WIDTH / 2),
-//    ((float)GRID_HEIGHT / 2),
-//    0);
-vec3df::Vec3Df g_cameraTarget = vec3df::create(
-    ((float)GRID_WIDTH / 2) + 0,
-    ((float)GRID_HEIGHT / 2),
-    0);
+Camera g_camera(
+    vec3df::create(
+        ((float)GRID_WIDTH / 2),
+        ((float)GRID_HEIGHT / 2),
+        ((float)GRID_HEIGHT / 2)),
+    degToRad(0), 0);
 
 mat4df::Mat4Df g_modelView;
 mat4df::Mat4Df g_projection;
 
 FrameRateCounter g_frameRateCounter(5000);
+
+bool g_shiftPressed = false;
+
+const bool CREATE_CONSOLE = false;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     MSG msg;
@@ -124,10 +123,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ::UpdateWindow(ghWnd);
 
-    ::AllocConsole();
-    freopen("conin$", "r", stdin);
-    freopen("conout$", "w", stdout);
-    freopen("conout$", "w", stderr);
+    if (CREATE_CONSOLE) {
+        ::AllocConsole();
+        freopen("conin$", "r", stdin);
+        freopen("conout$", "w", stdout);
+        freopen("conout$", "w", stderr);
+    }
 
     while (::GetMessage(&msg, NULL, 0, 0)) {
         ::TranslateMessage(&msg);
@@ -192,24 +193,91 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         PostQuitMessage(0);
         break;
 
-    //case WM_KEYDOWN:
-    //    switch (wParam) {
-    //    case VK_LEFT:
-    //        longinc += 0.5F;
-    //        break;
+    case WM_KEYDOWN:
+        switch (wParam) {
+        case 'W':
+            if (g_shiftPressed) {
+                g_camera.moveUp(MOVE_AMOUNT);
+            }
+            else {
+                g_camera.moveForward(MOVE_AMOUNT);
+            }
+            redoModelViewMatrix();
+            break;
 
-    //    case VK_RIGHT:
-    //        longinc -= 0.5F;
-    //        break;
+        case 'A':
+            g_camera.moveSide(-MOVE_AMOUNT);
+            redoModelViewMatrix();
+            break;
 
-    //    case VK_UP:
-    //        latinc += 0.5F;
-    //        break;
+        case 'S':
+            if (g_shiftPressed) {
+                g_camera.moveUp(-MOVE_AMOUNT);
+            }
+            else {
+                g_camera.moveForward(-MOVE_AMOUNT);
+            }
+            redoModelViewMatrix();
+            break;
 
-    //    case VK_DOWN:
-    //        latinc -= 0.5F;
-    //        break;
-    //    }
+        case 'D':
+            g_camera.moveSide(MOVE_AMOUNT);
+            redoModelViewMatrix();
+            break;
+
+        case 'Q':
+            g_camera.spinAroundFwd(SPIN_AMOUNT);
+            redoModelViewMatrix();
+            break;
+
+        case 'E':
+            g_camera.spinAroundFwd(-SPIN_AMOUNT);
+            redoModelViewMatrix();
+            break;
+
+        case VK_UP:
+            g_camera.spinAroundSide(-SPIN_AMOUNT);
+            redoModelViewMatrix();
+            break;
+
+        case VK_DOWN:
+            g_camera.spinAroundSide(SPIN_AMOUNT);
+            redoModelViewMatrix();
+            break;
+
+        case VK_LEFT:
+            //if (g_shiftPressed) {
+            //    g_camera.spinAroundFwd(SPIN_AMOUNT);
+            //}
+            //else {
+                g_camera.spinAroundUp(SPIN_AMOUNT);
+            //}
+            redoModelViewMatrix();
+            break;
+
+        case VK_RIGHT:
+            //if (g_shiftPressed) {
+            //    g_camera.spinAroundFwd(-SPIN_AMOUNT);
+            //}
+            //else {
+                g_camera.spinAroundUp(-SPIN_AMOUNT);
+            //}
+            redoModelViewMatrix();
+            break;
+
+        case VK_SHIFT:
+            g_shiftPressed = true;
+            break;
+        }
+        break;
+
+    case WM_KEYUP:
+        switch (wParam) {
+        case VK_SHIFT:
+            g_shiftPressed = false;
+            break;
+        }
+        break;
 
     case WM_MOUSEMOVE: {
         int xPos = GET_X_LPARAM(lParam);
@@ -227,10 +295,13 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 void doCleanup(HWND hWnd) {
 
-    ::FreeConsole();
+    if (CREATE_CONSOLE) {
+        ::FreeConsole();
+    }
 
     glDeleteVertexArrays(1, &g_membersVao);
     glDeleteVertexArrays(1, &g_outlineVao);
+    glDeleteVertexArrays(1, &g_dotVao);
     g_programs.cleanupPrograms();
 
     if (ghRC) {
@@ -291,8 +362,10 @@ GLvoid resize(int width, int height) {
 }
 
 void redoModelViewMatrix() {
+    //g_modelView = projection::createLookAt(
+    //    g_cameraPos, g_cameraTarget, g_cameraUp);
     g_modelView = projection::createLookAt(
-        g_cameraPos, g_cameraTarget, g_cameraUp);
+        g_camera.getPosition(), g_camera.getTarget(), g_camera.getUp());
 }
 
 //void redoProjectionMatrix(int width, int height) {
@@ -302,7 +375,7 @@ void redoModelViewMatrix() {
 //    const float NEAR_DIST = 0.5f;
 //    const float FAR_DIST = max(width, height);
 //
-//    float sideClipRatio = NEAR_DIST / g_cameraPos(0);
+//    float sideClipRatio = NEAR_DIST / g_camera.getPosition()(0);
 //    float widthDist = sideClipRatio * (width / 2.0f);
 //    float heightDist = sideClipRatio * (height / 2.0f);
 //
@@ -382,6 +455,13 @@ void initializeGL() {
     glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
 }
 
+void pushCoord(int x, int y, std::vector<GLfloat>& coords) {
+    coords.push_back((GLfloat)x);
+    coords.push_back((GLfloat)y);
+    coords.push_back((GLfloat)0);
+    coords.push_back((GLfloat)1);
+}
+
 GLuint g_gridPointCount;
 
 void setupGrid() {
@@ -391,27 +471,15 @@ void setupGrid() {
     int horizontalLineCount = (GRID_HEIGHT / GRID_SIZE) + 1;
     for (int i = 0; i < horizontalLineCount; i++) {
         int y = min(i * GRID_SIZE, GRID_HEIGHT);
-        outlineCoords.push_back((GLfloat)0);
-        outlineCoords.push_back((GLfloat)y);
-        outlineCoords.push_back((GLfloat)0);
-        outlineCoords.push_back((GLfloat)1);
-        outlineCoords.push_back((GLfloat)GRID_WIDTH);
-        outlineCoords.push_back((GLfloat)y);
-        outlineCoords.push_back((GLfloat)0);
-        outlineCoords.push_back((GLfloat)1);
+        pushCoord(0, y, outlineCoords);
+        pushCoord(GRID_WIDTH, y, outlineCoords);
     }
 
     int verticalLineCount = (GRID_WIDTH / GRID_SIZE) + 1;
     for (int i = 0; i < verticalLineCount; i++) {
         int x = min(i * GRID_SIZE, GRID_WIDTH);
-        outlineCoords.push_back((GLfloat)x);
-        outlineCoords.push_back((GLfloat)0);
-        outlineCoords.push_back((GLfloat)0);
-        outlineCoords.push_back((GLfloat)1);
-        outlineCoords.push_back((GLfloat)x);
-        outlineCoords.push_back((GLfloat)GRID_HEIGHT);
-        outlineCoords.push_back((GLfloat)0);
-        outlineCoords.push_back((GLfloat)1);
+        pushCoord(x, 0, outlineCoords);
+        pushCoord(x, GRID_HEIGHT, outlineCoords);
     }
 
     g_gridPointCount = (horizontalLineCount + verticalLineCount) * 2;
@@ -427,16 +495,35 @@ void setupGrid() {
     glEnableVertexAttribArray(0);
 }
 
+GLuint g_dotPointCount;
+
+void setupDot() {
+    std::vector<GLfloat> dotCoords;
+
+    const int DOT_RADIUS = 10;
+    pushCoord(-DOT_RADIUS, 0, dotCoords);
+    pushCoord(0, DOT_RADIUS * 2, dotCoords);
+    pushCoord(DOT_RADIUS, 0, dotCoords);
+    pushCoord(0, -DOT_RADIUS, dotCoords);
+    pushCoord(-DOT_RADIUS, 0, dotCoords);
+
+    g_dotPointCount = 5;
+
+    const GLuint DOT_BUFFER_SIZE = sizeof(GLfloat) * dotCoords.size();
+
+    glGenVertexArrays(1, &g_dotVao);
+    glGenBuffers(1, &g_dotVbo);
+    glBindVertexArray(g_dotVao);
+    glBindBuffer(GL_ARRAY_BUFFER, g_dotVbo);
+    glBufferData(GL_ARRAY_BUFFER, DOT_BUFFER_SIZE, dotCoords.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+}
+
 GLuint g_memberPosOffset;
 
 void setupMembers() {
 
-    //GLfloat memberCoords[] = {
-    //    -0.02f, -0.02f, 0.0f, 1.0f,
-    //     0.0f,   0.05f, 0.0f, 1.0f,
-    //     0.0f,   0.0f,  0.0f, 1.0f,
-    //     0.02f, -0.02f, 0.0f, 1.0f
-    //};
     GLfloat memberCoords[] = {
         -10, 10, 0, 1,
         0, -25, 0, 1,
@@ -489,6 +576,7 @@ void setupMembers() {
 
 void setupData(int width, int height) {
     setupGrid();
+    setupDot();
     setupMembers();
 }
 
@@ -504,6 +592,20 @@ void drawGrid() {
 
     glBindVertexArray(g_outlineVao);
     glDrawArrays(GL_LINES, 0, g_gridPointCount);
+}
+
+void drawDot() {
+    glUseProgram(g_programs.getSimpleProg());
+
+    const GLuint PROG4_MODEL_VIEW_LOC = 0;
+    const GLuint PROG4_PROJ_LOC = 1;
+    const GLuint PROG4_COLOR_LOC = 2;
+    glUniformMatrix4fv(PROG4_MODEL_VIEW_LOC, 1, GL_FALSE, g_modelView.getBuf());
+    glUniformMatrix4fv(PROG4_PROJ_LOC, 1, GL_FALSE, g_projection.getBuf());
+    glUniform4f(PROG4_COLOR_LOC, 1, 0, 0, 1);
+
+    glBindVertexArray(g_dotVao);
+    glDrawArrays(GL_LINE_STRIP, 0, g_dotPointCount);
 }
 
 void drawMembers() {
@@ -535,17 +637,18 @@ unsigned int g_lastFrameRatePrintTime = 0;
 void drawScene() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    vec4df::Vec4Df v = vec4df::create(400, 400, 0, 1);
-    vec4df::Vec4Df mv = mat4df::mul(g_modelView, v);
-    vec4df::Vec4Df proj = mat4df::mul(g_projection, mv);
+    //vec4df::Vec4Df v = vec4df::create(400, 400, 0, 1);
+    //vec4df::Vec4Df mv = mat4df::mul(g_modelView, v);
+    //vec4df::Vec4Df proj = mat4df::mul(g_projection, mv);
 
     drawGrid();
+    drawDot();
     drawMembers();
 
     DWORD currentTime = timeGetTime();
     float frameRate = g_frameRateCounter.incorportateTime(currentTime);
     if ((currentTime - g_lastFrameRatePrintTime) > 1000) {
-        printf("fps: %f\n", frameRate);
+        //printf("fps: %f\n", frameRate);
         g_lastFrameRatePrintTime = currentTime;
     }
 

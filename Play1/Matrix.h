@@ -13,8 +13,9 @@ public:
 
     int size() const;
 
-    void clear();
-    void setIdentity();
+    Matrix<T, D>& clear();
+    Matrix<T, D>& setIdentity();
+    Matrix<T, D>& transpose();
 
     const T& operator()(int col, int row) const;
     T& operator()(int col, int row);
@@ -42,16 +43,30 @@ int Matrix<T, D>::size() const {
 }
 
 template <class T, int D>
-void Matrix<T, D>::clear() {
+Matrix<T, D>& Matrix<T, D>::clear() {
     memset(m_matrix, 0, sizeof(m_matrix));
+    return *this;
 }
 
 template <class T, int D>
-void Matrix<T, D>::setIdentity() {
+Matrix<T, D>& Matrix<T, D>::setIdentity() {
     clear();
     for (int i = 0; i < D; i++) {
         m_matrix[i][i] = 1;
     }
+    return *this;
+}
+
+template <class T, int D>
+Matrix<T, D>& Matrix<T, D>::transpose() {
+    for (int col = 0; col < D; col++) {
+        for (int row = 0; row < col; row++) {
+            T temp = m_matrix[col][row];
+            m_matrix[col][row] = m_matrix[row][col];
+            m_matrix[row][col] = temp;
+        }
+    }
+    return *this;
 }
 
 template <class T, int D>

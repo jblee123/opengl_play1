@@ -1,7 +1,7 @@
 #pragma once
 
 #include <math.h>
-#include "Vec3D.h"
+#include "Vec3Df.h"
 
 namespace vec4df {
 

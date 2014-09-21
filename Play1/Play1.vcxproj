@@ -108,16 +108,20 @@
     </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="FrameRateCounter.cpp" />
     <ClCompile Include="GLPrograms.cpp" />
+    <ClCompile Include="Matrix4Df.cpp" />
     <ClCompile Include="Play1.cpp" />
     <ClCompile Include="Position.cpp" />
     <ClCompile Include="Projection.cpp" />
     <ClCompile Include="Swarm.cpp" />
     <ClCompile Include="SwarmMember.cpp" />
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="Vec3Df.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="FrameRateCounter.h" />
     <ClInclude Include="GLPrograms.h" />
@@ -128,7 +132,7 @@
     <ClInclude Include="Swarm.h" />
     <ClInclude Include="SwarmMember.h" />
     <ClInclude Include="Matrix.h" />
-    <ClInclude Include="Vec3D.h" />
+    <ClInclude Include="Vec3Df.h" />
     <ClInclude Include="Vec4Df.h" />
     <ClInclude Include="Vector.h" />
   </ItemGroup>
