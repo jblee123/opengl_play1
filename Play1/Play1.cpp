@@ -32,7 +32,7 @@ const int WIN_WIDTH = GRID_WIDTH + (6 * GRID_BUFFER);
 const int WIN_HEIGHT = GRID_HEIGHT + (3 * GRID_BUFFER);
 
 const float MOVE_AMOUNT = 5;
-const float SPIN_AMOUNT = degToRad(2.0f);
+const float SPIN_AMOUNT = degToRad(5.0f);
 
 LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL setupPixelFormat(HDC);
@@ -78,7 +78,7 @@ FrameRateCounter g_frameRateCounter(5000);
 
 bool g_shiftPressed = false;
 
-const bool CREATE_CONSOLE = false;
+const bool CREATE_CONSOLE = true;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     MSG msg;
@@ -299,9 +299,13 @@ void doCleanup(HWND hWnd) {
         ::FreeConsole();
     }
 
+    glDeleteBuffers(1, &g_membersVbo);
     glDeleteVertexArrays(1, &g_membersVao);
+    glDeleteBuffers(1, &g_outlineVbo);
     glDeleteVertexArrays(1, &g_outlineVao);
+    glDeleteBuffers(1, &g_dotVbo);
     glDeleteVertexArrays(1, &g_dotVao);
+
     g_programs.cleanupPrograms();
 
     if (ghRC) {

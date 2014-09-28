@@ -65,24 +65,36 @@ void Camera::moveBy(const vec3df::Vec3Df& delta) {
 
 void Camera::printVecs() {
     printf("\n");
-    printf(" fwd: %.04f, %.04f, %.04f\n", m_fwd(0), m_fwd(1), m_fwd(2));
-    printf("side: %.04f, %.04f, %.04f\n", m_side(0), m_side(1), m_side(2));
-    printf("  up: %.04f, %.04f, %.04f\n", m_up(0), m_up(1), m_up(2));
+    printf(" fwd: %.04f, %.04f, %.04f (len: %.04f)\n", m_fwd(0), m_fwd(1), m_fwd(2), m_fwd.length());
+    printf("side: %.04f, %.04f, %.04f (len: %.04f)\n", m_side(0), m_side(1), m_side(2), m_side.length());
+    printf("  up: %.04f, %.04f, %.04f (len: %.04f)\n", m_up(0), m_up(1), m_up(2), m_up.length());
 }
 
 void Camera::spinAroundFwd(float theta) {
+    printf("spinning around fwd\n");
+    printf("start:\n");
+    printVecs();
     spinAroundVec(m_fwd * -1, theta);
-    //printVecs();
+    printf("result:\n");
+    printVecs();
 }
 
 void Camera::spinAroundSide(float theta) {
+    printf("spinning around side\n");
+    printf("start:\n");
+    printVecs();
     spinAroundVec(m_side, theta);
-    //printVecs();
+    printf("result:\n");
+    printVecs();
 }
 
 void Camera::spinAroundUp(float theta) {
+    printf("spinning around up\n");
+    printf("start:\n");
+    printVecs();
     spinAroundVec(m_up, theta);
-    //printVecs();
+    printf("result:\n");
+    printVecs();
 }
 
 void Camera::spinAroundVec(const vec3df::Vec3Df& axis, float theta) {
