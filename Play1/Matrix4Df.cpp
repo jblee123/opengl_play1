@@ -1,9 +1,5 @@
-#pragma once
-
 #include "Matrix4Df.h"
 #include "Utils.h"
-
-#pragma once
 
 namespace mat4df {
 

@@ -12,9 +12,13 @@
 #include "Vec3Df.h"
 #include "Projection.h"
 
+#include "GLPrograms.h"
+#include "DrawnGrid.h"
+#include "OriginDot.h"
+#include "DrawnSwarm.h"
+
 #include "Camera.h"
 #include "SwarmMember.h"
-#include "GLPrograms.h"
 #include "Utils.h"
 #include "FrameRateCounter.h"
 
@@ -48,19 +52,12 @@ void createSwarm(int width, int height);
 void setupData(int width, int height);
 
 const int SWARM_SIZE = 500;
-//Swarm g_swarm;
-std::vector<SwarmMember*> g_swarm;
 
 GLPrograms g_programs;
 
-GLuint g_membersVao;
-GLuint g_membersVbo;
-
-GLuint g_outlineVao;
-GLuint g_outlineVbo;
-
-GLuint g_dotVao;
-GLuint g_dotVbo;
+DrawnGrid g_drawnGrid(GRID_WIDTH, GRID_HEIGHT);
+OriginDot g_originDot;
+DrawnSwarm g_drawnSwarm(GRID_WIDTH, GRID_HEIGHT, SWARM_SIZE);
 
 const UINT_PTR DRAW_TIMER_ID = 1;
 
@@ -166,7 +163,7 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         resize(rect.right, rect.bottom); // added in leiu of passing dims to initialize
         g_programs.compilePrograms();
 
-        createSwarm(GRID_WIDTH, GRID_HEIGHT);
+        //createSwarm(GRID_WIDTH, GRID_HEIGHT);
         setupData(rect.right, rect.bottom);
 
         ::SetTimer(ghWnd, DRAW_TIMER_ID, 0, DrawTimerProc);
@@ -299,12 +296,9 @@ void doCleanup(HWND hWnd) {
         ::FreeConsole();
     }
 
-    glDeleteBuffers(1, &g_membersVbo);
-    glDeleteVertexArrays(1, &g_membersVao);
-    glDeleteBuffers(1, &g_outlineVbo);
-    glDeleteVertexArrays(1, &g_outlineVao);
-    glDeleteBuffers(1, &g_dotVbo);
-    glDeleteVertexArrays(1, &g_dotVao);
+    g_drawnGrid.cleanup();
+    g_originDot.cleanup();
+    g_drawnSwarm.cleanup();
 
     g_programs.cleanupPrograms();
 
@@ -396,36 +390,6 @@ void redoProjectionMatrix(int width, int height) {
     g_projection = projection::createPerspective(FOV, (float)width, (float)height, NEAR_DIST, FAR_DIST);
 }
 
-void createSwarm(int width, int height) {
-    for (int i = 0; i < SWARM_SIZE; i++) {
-        SwarmMember* member = (i == 0) ?
-            new SwarmMember(
-                i + 1, 
-                Position(
-                    vec3df::create(
-                        width / 2.0f,
-                        height / 2.0f,
-                        -1.0f),
-                    0)) :
-            new SwarmMember(
-                i + 1,
-                Position(
-                    vec3df::create(
-                        randf() * width,
-                        randf() * height,
-                        -1.0f),
-                    randf() * (2 * (float)M_PI)));
-        //g_swarm.addMember(member);
-        Color color;
-        color.r = rand() % 256;
-        color.g = rand() % 256;
-        color.b = rand() % 256;
-        color.a = 255;
-        member->setColor(color);
-        g_swarm.push_back(member);
-    }
-}
-
 void initializeGL() {
     HGLRC tempContext = wglCreateContext(ghDC);
     wglMakeCurrent(ghDC, tempContext);
@@ -459,182 +423,16 @@ void initializeGL() {
     glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
 }
 
-void pushCoord(int x, int y, std::vector<GLfloat>& coords) {
-    coords.push_back((GLfloat)x);
-    coords.push_back((GLfloat)y);
-    coords.push_back((GLfloat)0);
-    coords.push_back((GLfloat)1);
-}
-
-GLuint g_gridPointCount;
-
-void setupGrid() {
-    const int GRID_SIZE = 100;
-    std::vector<GLfloat> outlineCoords;
-
-    int horizontalLineCount = (GRID_HEIGHT / GRID_SIZE) + 1;
-    for (int i = 0; i < horizontalLineCount; i++) {
-        int y = min(i * GRID_SIZE, GRID_HEIGHT);
-        pushCoord(0, y, outlineCoords);
-        pushCoord(GRID_WIDTH, y, outlineCoords);
-    }
-
-    int verticalLineCount = (GRID_WIDTH / GRID_SIZE) + 1;
-    for (int i = 0; i < verticalLineCount; i++) {
-        int x = min(i * GRID_SIZE, GRID_WIDTH);
-        pushCoord(x, 0, outlineCoords);
-        pushCoord(x, GRID_HEIGHT, outlineCoords);
-    }
-
-    g_gridPointCount = (horizontalLineCount + verticalLineCount) * 2;
-
-    const GLuint OUTLINE_BUFFER_SIZE = sizeof(GLfloat) * outlineCoords.size();
-
-    glGenVertexArrays(1, &g_outlineVao);
-    glGenBuffers(1, &g_outlineVbo);
-    glBindVertexArray(g_outlineVao);
-    glBindBuffer(GL_ARRAY_BUFFER, g_outlineVbo);
-    glBufferData(GL_ARRAY_BUFFER, OUTLINE_BUFFER_SIZE, outlineCoords.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-}
-
-GLuint g_dotPointCount;
-
-void setupDot() {
-    std::vector<GLfloat> dotCoords;
-
-    const int DOT_RADIUS = 10;
-    pushCoord(-DOT_RADIUS, 0, dotCoords);
-    pushCoord(0, DOT_RADIUS * 2, dotCoords);
-    pushCoord(DOT_RADIUS, 0, dotCoords);
-    pushCoord(0, -DOT_RADIUS, dotCoords);
-    pushCoord(-DOT_RADIUS, 0, dotCoords);
-
-    g_dotPointCount = 5;
-
-    const GLuint DOT_BUFFER_SIZE = sizeof(GLfloat) * dotCoords.size();
-
-    glGenVertexArrays(1, &g_dotVao);
-    glGenBuffers(1, &g_dotVbo);
-    glBindVertexArray(g_dotVao);
-    glBindBuffer(GL_ARRAY_BUFFER, g_dotVbo);
-    glBufferData(GL_ARRAY_BUFFER, DOT_BUFFER_SIZE, dotCoords.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-}
-
-GLuint g_memberPosOffset;
-
-void setupMembers() {
-
-    GLfloat memberCoords[] = {
-        -10, 10, 0, 1,
-        0, -25, 0, 1,
-        0, 0, 0, 1,
-        10, 10, 0, 1
-    };
-
-    const GLuint MEMBER_COORDS_OFFSET = 0;
-    const GLuint MEMBER_COORDS_SIZE = sizeof(memberCoords);
-    const GLuint MEMBER_COLOR_OFFSET = MEMBER_COORDS_OFFSET + MEMBER_COORDS_SIZE;
-    const GLuint MEMBER_COLOR_SIZE = sizeof(GLfloat) * 4 * g_swarm.size();
-    const GLuint MEMBER_POS_OFFSET = MEMBER_COLOR_OFFSET + MEMBER_COLOR_SIZE;
-    const GLuint MEMBER_POS_SIZE = sizeof(GLfloat) * 5 * g_swarm.size();
-    const GLuint SWARM_BUFFER_SIZE = MEMBER_COORDS_SIZE + MEMBER_COLOR_SIZE + MEMBER_POS_SIZE;
-
-    g_memberPosOffset = MEMBER_POS_OFFSET;
-
-    glGenVertexArrays(1, &g_membersVao);
-    glGenBuffers(1, &g_membersVbo);
-    glBindVertexArray(g_membersVao);
-    glBindBuffer(GL_ARRAY_BUFFER, g_membersVbo);
-    glBufferData(GL_ARRAY_BUFFER, SWARM_BUFFER_SIZE, NULL, GL_STATIC_DRAW);
-
-    glBufferSubData(GL_ARRAY_BUFFER, MEMBER_COORDS_OFFSET, MEMBER_COORDS_SIZE, memberCoords);
-
-    float* colorPtr = (float*)((char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) + MEMBER_COLOR_OFFSET);
-    for (auto member : g_swarm) {
-        Color color = member->getColor();
-        *colorPtr++ = (float)color.r / 255.0f;
-        *colorPtr++ = (float)color.g / 255.0f;
-        *colorPtr++ = (float)color.b / 255.0f;
-        *colorPtr++ = (float)color.a / 255.0f;
-    }
-    glUnmapBuffer(GL_ARRAY_BUFFER);
-
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)MEMBER_COORDS_OFFSET);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (GLvoid*)MEMBER_COLOR_OFFSET);
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, (GLvoid*)MEMBER_POS_OFFSET);
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 5, (GLvoid*)(MEMBER_POS_OFFSET + (sizeof(GLfloat) * 4)));
-
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-    glEnableVertexAttribArray(3);
-
-    glVertexAttribDivisor(1, 1);
-    glVertexAttribDivisor(2, 1);
-    glVertexAttribDivisor(3, 1);
-}
-
 void setupData(int width, int height) {
-    setupGrid();
-    setupDot();
-    setupMembers();
-}
 
-void drawGrid() {
-    glUseProgram(g_programs.getSimpleProg());
+    g_drawnGrid.setProgram(g_programs.getSimpleProg());
+    g_drawnGrid.setup();
 
-    const GLuint PROG4_MODEL_VIEW_LOC = 0;
-    const GLuint PROG4_PROJ_LOC = 1;
-    const GLuint PROG4_COLOR_LOC = 2;
-    glUniformMatrix4fv(PROG4_MODEL_VIEW_LOC, 1, GL_FALSE, g_modelView.getBuf());
-    glUniformMatrix4fv(PROG4_PROJ_LOC, 1, GL_FALSE, g_projection.getBuf());
-    glUniform4f(PROG4_COLOR_LOC, 1, 1, 0, 1);
+    g_originDot.setProgram(g_programs.getSimpleProg());
+    g_originDot.setup();
 
-    glBindVertexArray(g_outlineVao);
-    glDrawArrays(GL_LINES, 0, g_gridPointCount);
-}
-
-void drawDot() {
-    glUseProgram(g_programs.getSimpleProg());
-
-    const GLuint PROG4_MODEL_VIEW_LOC = 0;
-    const GLuint PROG4_PROJ_LOC = 1;
-    const GLuint PROG4_COLOR_LOC = 2;
-    glUniformMatrix4fv(PROG4_MODEL_VIEW_LOC, 1, GL_FALSE, g_modelView.getBuf());
-    glUniformMatrix4fv(PROG4_PROJ_LOC, 1, GL_FALSE, g_projection.getBuf());
-    glUniform4f(PROG4_COLOR_LOC, 1, 0, 0, 1);
-
-    glBindVertexArray(g_dotVao);
-    glDrawArrays(GL_LINE_STRIP, 0, g_dotPointCount);
-}
-
-void drawMembers() {
-    glUseProgram(g_programs.getProg3());
-
-    const GLuint PROG3_MODEL_VIEW_LOC = 0;
-    const GLuint PROG3_PROJ_LOC = 1;
-    glUniformMatrix4fv(PROG3_MODEL_VIEW_LOC, 1, GL_FALSE, g_modelView.getBuf());
-    glUniformMatrix4fv(PROG3_PROJ_LOC, 1, GL_FALSE, g_projection.getBuf());
-
-    float* posPtr = (float*)((char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) + g_memberPosOffset);
-    for (auto member : g_swarm) {
-        Position pos = member->getPosForAnimation(timeGetTime());
-        //Position pos = member->getPos();
-        vec3df::Vec3Df loc = pos.getLocation();
-        *posPtr++ = loc(0);
-        *posPtr++ = loc(1);
-        *posPtr++ = loc(2);
-        *posPtr++ = 0.0f;
-        *posPtr++ = pos.getHeading();
-    }
-    glUnmapBuffer(GL_ARRAY_BUFFER);
-
-    glBindVertexArray(g_membersVao);
-    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, SWARM_SIZE);
+    g_drawnSwarm.setProgram(g_programs.getProg3());
+    g_drawnSwarm.setup();
 }
 
 unsigned int g_lastFrameRatePrintTime = 0;
@@ -645,9 +443,9 @@ void drawScene() {
     //vec4df::Vec4Df mv = mat4df::mul(g_modelView, v);
     //vec4df::Vec4Df proj = mat4df::mul(g_projection, mv);
 
-    drawGrid();
-    drawDot();
-    drawMembers();
+    g_drawnGrid.draw(g_modelView, g_projection);
+    g_originDot.draw(g_modelView, g_projection);
+    g_drawnSwarm.draw(g_modelView, g_projection);
 
     DWORD currentTime = timeGetTime();
     float frameRate = g_frameRateCounter.incorportateTime(currentTime);

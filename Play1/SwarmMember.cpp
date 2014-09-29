@@ -1,8 +1,5 @@
-#define _USE_MATH_DEFINES
-
-#include <math.h>
-
 #include "SwarmMember.h"
+#include "Utils.h"
 
 SwarmMember::SwarmMember(int id) :
     SwarmMember(id, Position()) {
@@ -23,7 +20,7 @@ Position SwarmMember::getPos() const {
 }
 
 Position SwarmMember::getPosForAnimation(DWORD time) const {
-    float newHeading = fmod(time / 1000.f, (float)(2.0 * M_PI));
+    float newHeading = fmod(time / 1000.f, (float)(2.0 * PI));
     newHeading += m_pos.getHeading();
     vec3df::Vec3Df offset = vec3df::create(50, 0, 0);
     vec3df::rotateZ(offset, -newHeading);

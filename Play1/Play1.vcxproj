@@ -108,10 +108,14 @@
     </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BufferDrawable.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="DrawnGrid.cpp" />
+    <ClCompile Include="DrawnSwarm.cpp" />
     <ClCompile Include="FrameRateCounter.cpp" />
     <ClCompile Include="GLPrograms.cpp" />
     <ClCompile Include="Matrix4Df.cpp" />
+    <ClCompile Include="OriginDot.cpp" />
     <ClCompile Include="Play1.cpp" />
     <ClCompile Include="Position.cpp" />
     <ClCompile Include="Projection.cpp" />
@@ -120,11 +124,15 @@
     <ClCompile Include="Vec3Df.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BufferDrawable.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Color.h" />
+    <ClInclude Include="DrawnGrid.h" />
+    <ClInclude Include="DrawnSwarm.h" />
     <ClInclude Include="FrameRateCounter.h" />
     <ClInclude Include="GLPrograms.h" />
     <ClInclude Include="Matrix4Df.h" />
+    <ClInclude Include="OriginDot.h" />
     <ClInclude Include="Projection.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="Position.h" />

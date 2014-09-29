@@ -1,12 +1,11 @@
 #pragma once
 
-#define _USE_MATH_DEFINES
+#include <cmath>
+#include <cstdlib>
 
-#include <math.h>
-#include <stdlib.h>
-
-extern const float RAD_PER_CIRCLE;
-extern const float DEG_PER_CIRCLE;
+const static double PI = 3.14159265358979323846;
+const static float RAD_PER_CIRCLE = 2.0f * (float)PI;
+const static float DEG_PER_CIRCLE = 360.0f;
 
 inline float randf() {
     return ((float)rand() / (float)RAND_MAX);
