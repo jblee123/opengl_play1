@@ -57,6 +57,9 @@
     <ClCompile Include="DrawnSwarm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AxisDisplay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SwarmMember.h">
@@ -108,6 +111,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DrawnSwarm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AxisDisplay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

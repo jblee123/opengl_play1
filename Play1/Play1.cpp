@@ -16,6 +16,7 @@
 #include "DrawnGrid.h"
 #include "OriginDot.h"
 #include "DrawnSwarm.h"
+#include "AxisDisplay.h"
 
 #include "Camera.h"
 #include "SwarmMember.h"
@@ -47,7 +48,7 @@ GLvoid resize(int width, int height);
 void redoModelViewMatrix();
 void redoProjectionMatrix(int width, int height);
 void initializeGL();
-GLvoid drawScene();
+GLvoid drawScene(int width, int height);
 void createSwarm(int width, int height);
 void setupData(int width, int height);
 
@@ -58,6 +59,7 @@ GLPrograms g_programs;
 DrawnGrid g_drawnGrid(GRID_WIDTH, GRID_HEIGHT);
 OriginDot g_originDot;
 DrawnSwarm g_drawnSwarm(GRID_WIDTH, GRID_HEIGHT, SWARM_SIZE);
+AxisDisplay g_axisDisplay;
 
 const UINT_PTR DRAW_TIMER_ID = 1;
 
@@ -135,13 +137,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 }
 
 void CALLBACK DrawTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-    ::KillTimer(hwnd, idEvent);
+    ::KillTimer(ghWnd, idEvent);
 
     const float TARGET_FPS = 60;
     const UINT TIME_PER_FRAME = (UINT)(1000 / TARGET_FPS);
     ::SetTimer(ghWnd, DRAW_TIMER_ID, TIME_PER_FRAME, DrawTimerProc);
 
-    drawScene();
+    RECT rect;
+    ::GetWindowRect(ghWnd, &rect);
+    drawScene(rect.right - rect.left, rect.bottom - rect.top);
 }
 
 // main window procedure
@@ -299,6 +303,7 @@ void doCleanup(HWND hWnd) {
     g_drawnGrid.cleanup();
     g_originDot.cleanup();
     g_drawnSwarm.cleanup();
+    g_axisDisplay.cleanup();
 
     g_programs.cleanupPrograms();
 
@@ -433,10 +438,13 @@ void setupData(int width, int height) {
 
     g_drawnSwarm.setProgram(g_programs.getProg3());
     g_drawnSwarm.setup();
+
+    g_axisDisplay.setProgram(g_programs.get2dProg());
+    g_axisDisplay.setup();
 }
 
 unsigned int g_lastFrameRatePrintTime = 0;
-void drawScene() {
+void drawScene(int width, int height) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //vec4df::Vec4Df v = vec4df::create(400, 400, 0, 1);
@@ -446,11 +454,12 @@ void drawScene() {
     g_drawnGrid.draw(g_modelView, g_projection);
     g_originDot.draw(g_modelView, g_projection);
     g_drawnSwarm.draw(g_modelView, g_projection);
+    g_axisDisplay.draw(width, height);
 
     DWORD currentTime = timeGetTime();
     float frameRate = g_frameRateCounter.incorportateTime(currentTime);
     if ((currentTime - g_lastFrameRatePrintTime) > 1000) {
-        //printf("fps: %f\n", frameRate);
+        printf("fps: %f\n", frameRate);
         g_lastFrameRatePrintTime = currentTime;
     }
 

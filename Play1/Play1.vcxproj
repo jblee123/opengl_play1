@@ -108,6 +108,7 @@
     </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AxisDisplay.cpp" />
     <ClCompile Include="BufferDrawable.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DrawnGrid.cpp" />
@@ -124,6 +125,7 @@
     <ClCompile Include="Vec3Df.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AxisDisplay.h" />
     <ClInclude Include="BufferDrawable.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Color.h" />

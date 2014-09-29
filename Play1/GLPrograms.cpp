@@ -1,9 +1,13 @@
+#include <cstdlib>
+#include <string>
+
 #include <GL/glew.h>
 
 #include "GLPrograms.h"
 
 GLPrograms::GLPrograms() :
     m_simpleProg(0),
+    m_2dProg(0),
     m_prog1(0),
     m_prog2(0),
     m_prog3(0) {
@@ -14,20 +18,22 @@ GLPrograms::~GLPrograms() {
 
 void GLPrograms::compilePrograms() {
     compileSimpleProgram();
+    compile2dProgram();
     compileProgram1();
     compileProgram2();
     compileProgram3();
 }
 
-void GLPrograms::cleanupProgram(GLuint& prog) {
-    if (prog) {
-        glDeleteProgram(prog);
-        prog = 0;
-    }
-}
-
 void GLPrograms::cleanupPrograms() {
+    auto cleanupProgram = [](GLuint& prog) {
+        if (prog) {
+            glDeleteProgram(prog);
+            prog = 0;
+        }
+    };
+
     cleanupProgram(m_simpleProg);
+    cleanupProgram(m_2dProg);
     cleanupProgram(m_prog1);
     cleanupProgram(m_prog2);
     cleanupProgram(m_prog3);
@@ -35,6 +41,10 @@ void GLPrograms::cleanupPrograms() {
 
 GLuint GLPrograms::getSimpleProg() const {
     return m_simpleProg;
+}
+
+GLuint GLPrograms::get2dProg() const {
+    return m_2dProg;
 }
 
 GLuint GLPrograms::getProg1() const {
@@ -49,29 +59,43 @@ GLuint GLPrograms::getProg3() const {
     return m_prog3;
 }
 
-void GLPrograms::compileProgram(
+GLint GLPrograms::compileShader(GLuint shaderType, const GLchar* shaderSource) {
+    const GLchar* SHADER_SOURCE[] = { shaderSource };
+
+    GLuint shader = glCreateShader(shaderType);
+    glShaderSource(shader, 1, SHADER_SOURCE, nullptr);
+    glCompileShader(shader);
+
+    GLint compileStatus;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
+    if (!compileStatus) {
+        printf("%s shader failed to compile",
+            (shaderType == GL_VERTEX_SHADER) ? "vertex" : "fragment");
+
+        GLint logLength;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+        GLchar* infoLog = new GLchar[logLength + 1];
+        glGetShaderInfoLog(shader, logLength, nullptr, infoLog);
+        printf("log info:\n%s", infoLog);
+        delete[] infoLog;
+    }
+
+    return shader;
+}
+
+GLuint GLPrograms::compileProgram(
     const GLchar* vertexShaderSource,
-    const GLchar* fragmentShaderSource,
-    GLuint& prog) {
+    const GLchar* fragmentShaderSource) {
 
     const GLchar* VERTEX_SHADER_SOURCE[] = { vertexShaderSource };
     const GLchar* FRAGMENT_SHADER_SOURCE[] = { fragmentShaderSource };
 
     // vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, VERTEX_SHADER_SOURCE, nullptr);
-    glCompileShader(vertexShader);
-
-    GLint compileStatus;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &compileStatus);
-
-    // fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, FRAGMENT_SHADER_SOURCE, nullptr);
-    glCompileShader(fragmentShader);
-
+    GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
+    GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+    
     // Create program, attach shaders to it, and link it
-    prog = glCreateProgram();
+    GLuint prog = glCreateProgram();
     glAttachShader(prog, vertexShader);
     glAttachShader(prog, fragmentShader);
     glLinkProgram(prog);
@@ -79,6 +103,8 @@ void GLPrograms::compileProgram(
     // Delete the shaders as the program has them now
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+
+    return prog;
 }
 
 void GLPrograms::compileSimpleProgram() {
@@ -108,14 +134,47 @@ void GLPrograms::compileSimpleProgram() {
         "in vec4 vs_color;      \n"
         "out vec4 color;        \n"
         "void main(void) {      \n"
-        "    color = vec4(0, 1, 0, 1);  \n"
         "    color = vs_color;  \n"
         "}                      \n";
 
-    compileProgram(
+    m_simpleProg = compileProgram(
         VERTEX_SHADER_SOURCE,
-        FRAGMENT_SHADER_SOURCE,
-        m_simpleProg);
+        FRAGMENT_SHADER_SOURCE);
+}
+
+void GLPrograms::compile2dProgram() {
+    const GLchar* VERTEX_SHADER_SOURCE =
+        "#version 410 core                                      \n"
+        "#extension GL_ARB_explicit_uniform_location : require  \n"
+        "                                                       \n"
+        "layout (location = 0) in vec2 vertex_pos;              \n"
+        "                                                       \n"
+        "layout (location = 0) uniform float width;             \n"
+        "layout (location = 1) uniform float height;            \n"
+        "layout (location = 2) uniform vec4 color;              \n"
+        "                                                       \n"
+        "out vec4 vs_color;                                     \n"
+        "                                                       \n"
+        "void main(void) {                                      \n"
+        "    gl_Position = vec4(                                \n"
+        "        (2 * vertex_pos[0] / width) - 1,               \n"
+        "        1 - (2 * vertex_pos[1] / height),              \n"
+        "        0, 1);                                         \n"
+        "    vs_color = color;                                  \n"
+        "}                                                      \n";
+
+    const GLchar* FRAGMENT_SHADER_SOURCE =
+        "#version 410 core      \n"
+        "                       \n"
+        "in vec4 vs_color;      \n"
+        "out vec4 color;        \n"
+        "void main(void) {      \n"
+        "    color = vs_color;  \n"
+        "}                      \n";
+
+    m_2dProg = compileProgram(
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE);
 }
 
 void GLPrograms::compileProgram1() {
@@ -145,10 +204,9 @@ void GLPrograms::compileProgram1() {
         "    color = vs_color;  \n"
         "}                      \n";
 
-    compileProgram(
+    m_prog1 = compileProgram(
         VERTEX_SHADER_SOURCE,
-        FRAGMENT_SHADER_SOURCE,
-        m_prog1);
+        FRAGMENT_SHADER_SOURCE);
 }
 
 void GLPrograms::compileProgram2() {
@@ -183,10 +241,9 @@ void GLPrograms::compileProgram2() {
         "    color = vs_color;  \n"
         "}                      \n";
 
-    compileProgram(
+    m_prog2 = compileProgram(
         VERTEX_SHADER_SOURCE,
-        FRAGMENT_SHADER_SOURCE,
-        m_prog2);
+        FRAGMENT_SHADER_SOURCE);
 }
 
 void GLPrograms::compileProgram3() {
@@ -229,8 +286,7 @@ void GLPrograms::compileProgram3() {
         "    color = vs_color;  \n"
         "}                      \n";
 
-    compileProgram(
+    m_prog3 = compileProgram(
         VERTEX_SHADER_SOURCE,
-        FRAGMENT_SHADER_SOURCE,
-        m_prog3);
+        FRAGMENT_SHADER_SOURCE);
 }

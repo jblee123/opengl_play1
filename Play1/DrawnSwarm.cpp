@@ -78,6 +78,9 @@ void DrawnSwarm::draw(const mat4df::Mat4Df& modelView, const mat4df::Mat4Df& pro
     glUniformMatrix4fv(PROG3_MODEL_VIEW_LOC, 1, GL_FALSE, modelView.getBuf());
     glUniformMatrix4fv(PROG3_PROJ_LOC, 1, GL_FALSE, projection.getBuf());
 
+    glBindVertexArray(m_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+
     float* posPtr = (float*)((char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) + m_posOffset);
     for (auto member : m_swarm) {
         Position pos = member->getPosForAnimation(timeGetTime());
@@ -91,7 +94,6 @@ void DrawnSwarm::draw(const mat4df::Mat4Df& modelView, const mat4df::Mat4Df& pro
     }
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
-    glBindVertexArray(m_vao);
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, m_swarm_size);
 }
 

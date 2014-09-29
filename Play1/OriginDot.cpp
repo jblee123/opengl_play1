@@ -16,12 +16,12 @@ void OriginDot::setup() {
 
     std::vector<GLfloat> dotCoords;
 
-    const int DOT_RADIUS = 10;
-    pushCoord(-DOT_RADIUS, 0, dotCoords);
-    pushCoord(0, DOT_RADIUS * 2, dotCoords);
-    pushCoord(DOT_RADIUS, 0, dotCoords);
-    pushCoord(0, -DOT_RADIUS, dotCoords);
-    pushCoord(-DOT_RADIUS, 0, dotCoords);
+    const float DOT_RADIUS = 10;
+    pushCoord4d(-DOT_RADIUS, 0, dotCoords);
+    pushCoord4d(0, DOT_RADIUS * 2, dotCoords);
+    pushCoord4d(DOT_RADIUS, 0, dotCoords);
+    pushCoord4d(0, -DOT_RADIUS, dotCoords);
+    pushCoord4d(-DOT_RADIUS, 0, dotCoords);
 
     m_pointCount = 5;
 

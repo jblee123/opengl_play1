@@ -1,6 +1,5 @@
 #pragma once
 
-#include <windows.h>
 #include <GL/gl.h>
 
 class GLPrograms
@@ -13,24 +12,25 @@ public:
     void cleanupPrograms();
 
     GLuint getSimpleProg() const;
+    GLuint get2dProg() const;
     GLuint getProg1() const;
     GLuint getProg2() const;
     GLuint getProg3() const;
 
 protected:
-    void compileProgram(
+    GLint compileShader(GLuint shaderType, const GLchar* shaderSource);
+    GLuint compileProgram(
         const GLchar* vertexShaderSource,
-        const GLchar* fragmentShaderSource,
-        GLuint& prog);
+        const GLchar* fragmentShaderSource);
 
     void compileSimpleProgram();
+    void compile2dProgram();
     void compileProgram1();
     void compileProgram2();
     void compileProgram3();
 
-    static void cleanupProgram(GLuint& prog);
-
     GLuint m_simpleProg;
+    GLuint m_2dProg;
     GLuint m_prog1;
     GLuint m_prog2;
     GLuint m_prog3;

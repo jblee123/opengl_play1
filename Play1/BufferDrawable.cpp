@@ -26,16 +26,18 @@ void BufferDrawable::cleanup() {
     glDeleteVertexArrays(1, &m_vao);
 }
 
-void BufferDrawable::pushCoord(int x, int y, int z, std::vector<GLfloat>& coords) {
-    coords.push_back((GLfloat)x);
-    coords.push_back((GLfloat)y);
-    coords.push_back((GLfloat)0);
-    coords.push_back((GLfloat)1);
+void BufferDrawable::pushCoord4d(float x, float y, float z, std::vector<GLfloat>& coords) {
+    coords.push_back(x);
+    coords.push_back(y);
+    coords.push_back(z);
+    coords.push_back(1);
 }
 
-void BufferDrawable::pushCoord(int x, int y, std::vector<GLfloat>& coords) {
-    coords.push_back((GLfloat)x);
-    coords.push_back((GLfloat)y);
-    coords.push_back((GLfloat)0);
-    coords.push_back((GLfloat)1);
+void BufferDrawable::pushCoord4d(float x, float y, std::vector<GLfloat>& coords) {
+    pushCoord4d(x, y, 0, coords);
+}
+
+void BufferDrawable::pushCoord2d(float x, float y, std::vector<GLfloat>& coords) {
+    coords.push_back(x);
+    coords.push_back(y);
 }

@@ -23,16 +23,16 @@ void DrawnGrid::setup() {
 
     int horizontalLineCount = (m_height / GRID_SIZE) + 1;
     for (int i = 0; i < horizontalLineCount; i++) {
-        int y = std::min(i * GRID_SIZE, m_height);
-        pushCoord(0, y, outlineCoords);
-        pushCoord(m_width, y, outlineCoords);
+        float y = (float)std::min(i * GRID_SIZE, m_height);
+        pushCoord4d(0, y, outlineCoords);
+        pushCoord4d((float)m_width, y, outlineCoords);
     }
 
     int verticalLineCount = (m_width / GRID_SIZE) + 1;
     for (int i = 0; i < verticalLineCount; i++) {
-        int x = std::min(i * GRID_SIZE, m_width);
-        pushCoord(x, 0, outlineCoords);
-        pushCoord(x, m_height, outlineCoords);
+        float x = (float)std::min(i * GRID_SIZE, m_width);
+        pushCoord4d(x, 0, outlineCoords);
+        pushCoord4d(x, (float)m_height, outlineCoords);
     }
 
     m_pointCount = (horizontalLineCount + verticalLineCount) * 2;
