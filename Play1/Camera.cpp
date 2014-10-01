@@ -43,8 +43,16 @@ vec3df::Vec3Df Camera::getTarget() const {
     return m_position + m_fwd;
 }
 
+vec3df::Vec3Df Camera::getFwd() const {
+    return m_fwd;
+}
+
 vec3df::Vec3Df Camera::getUp() const {
     return m_up;
+}
+
+vec3df::Vec3Df Camera::getSide() const {
+    return m_side;
 }
 
 void Camera::moveForward(float delta) {

@@ -15,7 +15,9 @@ public:
 
     vec3df::Vec3Df getPosition() const;
     vec3df::Vec3Df getTarget() const;
+    vec3df::Vec3Df getFwd() const;
     vec3df::Vec3Df getUp() const;
+    vec3df::Vec3Df getSide() const;
 
     void moveForward(float delta);
     void moveSide(float delta);

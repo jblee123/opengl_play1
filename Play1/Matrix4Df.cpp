@@ -57,11 +57,10 @@ Mat4Df createRotationAbout(const vec4df::Vec4Df& vec, float theta) {
 }
 
 Mat4Df createRotationAbout(const vec3df::Vec3Df& vec, float theta) {
-    vec3df::Vec3Df a = vec.getUnit();
 
-    float absX = fabsf(a(0));
-    float absY = fabsf(a(1));
-    float absZ = fabsf(a(2));
+    float absX = fabsf(vec(0));
+    float absY = fabsf(vec(1));
+    float absZ = fabsf(vec(2));
 
     vec3df::Vec3Df n;
     if ((absX < absY) && (absX < absZ)) {
@@ -74,7 +73,8 @@ Mat4Df createRotationAbout(const vec3df::Vec3Df& vec, float theta) {
         n = vec3df::create(0, 0, 1);
     }
 
-    vec3df::Vec3Df b = vec3df::cross(a, n);
+    vec3df::Vec3Df a = vec.getUnit();
+    vec3df::Vec3Df b = vec3df::cross(a, n).getUnit();
     vec3df::Vec3Df c = vec3df::cross(a, b);
 
     Mat4Df r1 = mat4df::create(
@@ -95,53 +95,7 @@ Mat4Df createRotationAbout(const vec3df::Vec3Df& vec, float theta) {
     Mat4Df r3 = r1;
     r3.transpose();
 
-    return r3 * (r2 * r1);
-}
-
-Mat4Df createRotationAbout(const vec3df::Vec3Df& vec, float theta, const vec3df::Vec3Df& theVec) {
-    vec3df::Vec3Df a = vec.getUnit();
-
-    float absX = fabsf(a(0));
-    float absY = fabsf(a(1));
-    float absZ = fabsf(a(2));
-
-    vec3df::Vec3Df n;
-    if ((absX < absY) && (absX < absZ)) {
-        n = vec3df::create(1, 0, 0);
-    }
-    else if (absY < absZ) {
-        n = vec3df::create(0, 1, 0);
-    }
-    else {
-        n = vec3df::create(0, 0, 1);
-    }
-
-    vec3df::Vec3Df b = vec3df::cross(a, n);
-    vec3df::Vec3Df c = vec3df::cross(a, b);
-
-    Mat4Df r1 = mat4df::create(
-        a(0), a(1), a(2), 0,
-        b(0), b(1), b(2), 0,
-        c(0), c(1), c(2), 0,
-        0, 0, 0, 1);
-
-    float cosTheta = cos(theta);
-    float sinTheta = sin(theta);
-
-    Mat4Df r2 = mat4df::create(
-        1, 0, 0, 0,
-        0, cosTheta, -sinTheta, 0,
-        0, sinTheta, cosTheta, 0,
-        0, 0, 0, 1);
-
-    Mat4Df r3 = r1;
-    r3.transpose();
-
-    vec3df::Vec3Df v1 = mat4df::mul(r1, theVec);
-    vec3df::Vec3Df v2 = mat4df::mul(r2, v1);
-    vec3df::Vec3Df v3 = mat4df::mul(r3, v2);
-
-    return r3 * (r2 * r1);
+    return r3 * r2 * r1;
 }
 
 } // of namespace mat4df

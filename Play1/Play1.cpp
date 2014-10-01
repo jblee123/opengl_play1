@@ -454,12 +454,12 @@ void drawScene(int width, int height) {
     g_drawnGrid.draw(g_modelView, g_projection);
     g_originDot.draw(g_modelView, g_projection);
     g_drawnSwarm.draw(g_modelView, g_projection);
-    g_axisDisplay.draw(width, height);
+    g_axisDisplay.draw(width, height, g_camera);
 
     DWORD currentTime = timeGetTime();
     float frameRate = g_frameRateCounter.incorportateTime(currentTime);
     if ((currentTime - g_lastFrameRatePrintTime) > 1000) {
-        printf("fps: %f\n", frameRate);
+        //printf("fps: %f\n", frameRate);
         g_lastFrameRatePrintTime = currentTime;
     }
 

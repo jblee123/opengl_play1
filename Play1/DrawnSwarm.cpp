@@ -81,9 +81,10 @@ void DrawnSwarm::draw(const mat4df::Mat4Df& modelView, const mat4df::Mat4Df& pro
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 
+    DWORD time = timeGetTime();
     float* posPtr = (float*)((char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY) + m_posOffset);
     for (auto member : m_swarm) {
-        Position pos = member->getPosForAnimation(timeGetTime());
+        Position pos = member->getPosForAnimation(time);
         //Position pos = member->getPos();
         vec3df::Vec3Df loc = pos.getLocation();
         *posPtr++ = loc(0);
