@@ -7,13 +7,13 @@ FrameRateCounter::FrameRateCounter(unsigned int histortyLength) :
 FrameRateCounter::~FrameRateCounter() {
 }
 
-float FrameRateCounter::incorportateTime(unsigned int current_time) {
-    m_history.push(current_time);
-    return getFrameRate(current_time);
+float FrameRateCounter::incorportateTime(unsigned int currentTime) {
+    m_history.push(currentTime);
+    return getFrameRate(currentTime);
 }
 
-float FrameRateCounter::getFrameRate(unsigned int current_time) {
-    while ((current_time - m_history.front()) >= m_historyLength) {
+float FrameRateCounter::getFrameRate(unsigned int currentTime) {
+    while ((currentTime - m_history.front()) >= m_historyLength) {
         m_history.pop();
     }
     return m_history.size() ?

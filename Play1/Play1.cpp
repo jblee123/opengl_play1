@@ -76,6 +76,7 @@ mat4df::Mat4Df g_projection;
 FrameRateCounter g_frameRateCounter(5000);
 
 bool g_shiftPressed = false;
+bool g_paused = false;
 
 const bool CREATE_CONSOLE = true;
 
@@ -136,15 +137,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     return TRUE;
 }
 
+DWORD g_lastTime = 0;
 void CALLBACK DrawTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-    ::KillTimer(ghWnd, idEvent);
+    if (g_paused) {
+        return;
+    }
+
+    ::KillTimer(hwnd, idEvent);
+
+    DWORD currentTime = timeGetTime();
 
     const float TARGET_FPS = 60;
     const UINT TIME_PER_FRAME = (UINT)(1000 / TARGET_FPS);
-    ::SetTimer(ghWnd, DRAW_TIMER_ID, TIME_PER_FRAME, DrawTimerProc);
+
+    DWORD nextTime = (g_lastTime > 0) ?
+        (g_lastTime + TIME_PER_FRAME) : (currentTime + TIME_PER_FRAME);
+    DWORD delay = (nextTime >= currentTime) ? (nextTime - currentTime) : 0;
+    ::SetTimer(hwnd, DRAW_TIMER_ID, delay, DrawTimerProc);
+
+    //if (g_lastTime > 0) {
+    //    printf("time: %u\n", currentTime - g_lastTime);
+    //}
+    g_lastTime = currentTime;
 
     RECT rect;
-    ::GetWindowRect(ghWnd, &rect);
+    ::GetWindowRect(hwnd, &rect);
     drawScene(rect.right - rect.left, rect.bottom - rect.top);
 }
 
@@ -170,7 +187,8 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         //createSwarm(GRID_WIDTH, GRID_HEIGHT);
         setupData(rect.right, rect.bottom);
 
-        ::SetTimer(ghWnd, DRAW_TIMER_ID, 0, DrawTimerProc);
+        ::SetTimer(hWnd, DRAW_TIMER_ID, 0, DrawTimerProc);
+        //::KillTimer(hWnd, DRAW_TIMER_ID);
 
         break;
 
@@ -196,6 +214,10 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
     case WM_KEYDOWN:
         switch (wParam) {
+        case 'P':
+            g_paused = !g_paused;
+            break;
+
         case 'W':
             if (g_shiftPressed) {
                 g_camera.moveUp(MOVE_AMOUNT);
@@ -459,7 +481,7 @@ void drawScene(int width, int height) {
     DWORD currentTime = timeGetTime();
     float frameRate = g_frameRateCounter.incorportateTime(currentTime);
     if ((currentTime - g_lastFrameRatePrintTime) > 1000) {
-        //printf("fps: %f\n", frameRate);
+        printf("fps: %f\n", frameRate);
         g_lastFrameRatePrintTime = currentTime;
     }
 

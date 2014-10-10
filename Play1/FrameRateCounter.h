@@ -5,11 +5,11 @@
 class FrameRateCounter
 {
 public:
-    FrameRateCounter(unsigned int historty_length);
+    FrameRateCounter(unsigned int histortyLength);
     virtual ~FrameRateCounter();
 
-    virtual float incorportateTime(unsigned int current_time);
-    virtual float getFrameRate(unsigned int current_time);
+    virtual float incorportateTime(unsigned int currentTime);
+    virtual float getFrameRate(unsigned int currentTime);
 
 protected:
     unsigned int m_historyLength;
