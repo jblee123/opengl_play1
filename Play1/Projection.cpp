@@ -66,7 +66,7 @@ mat4df::Mat4Df createPerspective(
     float fov_x, float width, float height, float near_dist, float far_dist) {
 
     float aspect_ratio = width / height;
-    float z_range = near_dist - far_dist;
+    float z_range = far_dist + near_dist;
     float tan_half_fov = tanf(degToRad(fov_x / 2.0f));
 
     mat4df::Mat4Df mat;
@@ -75,10 +75,10 @@ mat4df::Mat4Df createPerspective(
 
     mat(1, 1) = 1.0f / tan_half_fov;
 
-    mat(2, 2) = (-near_dist - far_dist) / z_range;
-    mat(2, 3) = 2.0f * far_dist * near_dist / z_range;
+    mat(2, 2) = -(far_dist + near_dist) / z_range;
+    mat(2, 3) = -2.0f * far_dist * near_dist / z_range;
 
-    mat(3, 2) = 1.0f;
+    mat(3, 2) = -1.0f;
 
     return mat;
 }

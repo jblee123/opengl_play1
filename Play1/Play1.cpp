@@ -73,7 +73,7 @@ Camera g_camera(
     vec3df::create(
         ((float)GRID_WIDTH / 2),
         ((float)GRID_HEIGHT / 2),
-        ((float)GRID_HEIGHT / 2)),
+        (float)GRID_HEIGHT),
     degToRad(0), 0);
 
 mat4df::Mat4Df g_modelView;
@@ -199,7 +199,6 @@ LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         setupData(rect.right, rect.bottom);
 
         ::SetTimer(hWnd, DRAW_TIMER_ID, 0, DrawTimerProc);
-        //::KillTimer(hWnd, DRAW_TIMER_ID);
 
         break;
 
@@ -426,7 +425,7 @@ void redoModelViewMatrix() {
 void redoProjectionMatrix(int width, int height) {
     const float NEAR_DIST = 0.5f;
     const float FAR_DIST = max((float)width, (float)height);
-    const float FOV = 120.0f;
+    const float FOV = 70;
 
     g_projection = projection::createPerspective(FOV, (float)width, (float)height, NEAR_DIST, FAR_DIST);
 }
@@ -485,11 +484,10 @@ void setupData(int width, int height) {
 unsigned int g_lastFrameRatePrintTime = 0;
 void drawScene(int width, int height) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearDepth(-1000000);
     glDepthMask(true);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_GREATER);
+    glDepthFunc(GL_LEQUAL);
 
     //vec4df::Vec4Df v = vec4df::create(400, 400, 0, 1);
     //vec4df::Vec4Df mv = mat4df::mul(g_modelView, v);
@@ -510,7 +508,6 @@ void drawScene(int width, int height) {
         printf("fps: %f\n", frameRate);
         g_lastFrameRatePrintTime = currentTime;
     }
-
 
     ::SwapBuffers(ghDC);
 }

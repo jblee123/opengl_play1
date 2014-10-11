@@ -93,59 +93,60 @@ void BorgCube::draw(const mat4df::Mat4Df& modelView, const mat4df::Mat4Df& proje
     const GLfloat BOTTOM_OFFSET = 300;
     const GLfloat LEFT_OFFSET = 1000;
     const GLfloat SIDE_LEN = 300;
+    const GLfloat Z_OFFSET = SIDE_LEN / 2;
 
     std::vector<GLfloat> coords;
 
     // front
-    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET + SIDE_LEN, 0, coords);
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, 0, coords);
-    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET,            0, coords);
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET,            0, coords);
+    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET, coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET, coords);
+    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET,            Z_OFFSET, coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET,            Z_OFFSET, coords);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * coords.size(), coords.data());
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     // right
     coords.clear();
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, 0,         coords);
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, -SIDE_LEN, coords);
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET,            0,         coords);
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET,            -SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET,            coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET - SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET,            Z_OFFSET,            coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET,            Z_OFFSET - SIDE_LEN, coords);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * coords.size(), coords.data());
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     // back
     coords.clear();
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, -SIDE_LEN, coords);
-    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET + SIDE_LEN, -SIDE_LEN, coords);
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET,            -SIDE_LEN, coords);
-    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET,            -SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET - SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET - SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET,            Z_OFFSET - SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET,            Z_OFFSET - SIDE_LEN, coords);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * coords.size(), coords.data());
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     // left
     coords.clear();
-    pushCoord3d(LEFT_OFFSET, BOTTOM_OFFSET + SIDE_LEN, -SIDE_LEN, coords);
-    pushCoord3d(LEFT_OFFSET, BOTTOM_OFFSET + SIDE_LEN, 0,         coords);
-    pushCoord3d(LEFT_OFFSET, BOTTOM_OFFSET,            -SIDE_LEN, coords);
-    pushCoord3d(LEFT_OFFSET, BOTTOM_OFFSET,            0,         coords);
+    pushCoord3d(LEFT_OFFSET, BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET - SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET, BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET,            coords);
+    pushCoord3d(LEFT_OFFSET, BOTTOM_OFFSET,            Z_OFFSET - SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET, BOTTOM_OFFSET,            Z_OFFSET,            coords);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * coords.size(), coords.data());
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     // top
     coords.clear();
-    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET + SIDE_LEN, -SIDE_LEN, coords);
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, -SIDE_LEN, coords);
-    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET + SIDE_LEN, 0,         coords);
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, 0,         coords);
+    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET - SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET - SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET,            coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET + SIDE_LEN, Z_OFFSET,            coords);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * coords.size(), coords.data());
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     // bottom
     coords.clear();
-    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET, 0,         coords);
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET, 0,         coords);
-    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET, -SIDE_LEN, coords);
-    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET, -SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET, Z_OFFSET,            coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET, Z_OFFSET,            coords);
+    pushCoord3d(LEFT_OFFSET,            BOTTOM_OFFSET, Z_OFFSET - SIDE_LEN, coords);
+    pushCoord3d(LEFT_OFFSET + SIDE_LEN, BOTTOM_OFFSET, Z_OFFSET - SIDE_LEN, coords);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * coords.size(), coords.data());
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
