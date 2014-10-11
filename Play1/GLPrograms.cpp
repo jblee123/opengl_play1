@@ -8,6 +8,7 @@
 GLPrograms::GLPrograms() :
     m_simpleProg(0),
     m_2dProg(0),
+    m_simpleTextureProg(0),
     m_prog1(0),
     m_prog2(0),
     m_prog3(0) {
@@ -19,6 +20,7 @@ GLPrograms::~GLPrograms() {
 void GLPrograms::compilePrograms() {
     compileSimpleProgram();
     compile2dProgram();
+    compileSimpleTextureProgram();
     compileProgram1();
     compileProgram2();
     compileProgram3();
@@ -34,6 +36,7 @@ void GLPrograms::cleanupPrograms() {
 
     cleanupProgram(m_simpleProg);
     cleanupProgram(m_2dProg);
+    cleanupProgram(m_simpleTextureProg);
     cleanupProgram(m_prog1);
     cleanupProgram(m_prog2);
     cleanupProgram(m_prog3);
@@ -45,6 +48,10 @@ GLuint GLPrograms::getSimpleProg() const {
 
 GLuint GLPrograms::get2dProg() const {
     return m_2dProg;
+}
+
+GLuint GLPrograms::getSimpleTextureProg() const {
+    return m_simpleTextureProg;
 }
 
 GLuint GLPrograms::getProg1() const {
@@ -173,6 +180,45 @@ void GLPrograms::compile2dProgram() {
         "}                      \n";
 
     m_2dProg = compileProgram(
+        VERTEX_SHADER_SOURCE,
+        FRAGMENT_SHADER_SOURCE);
+}
+
+void GLPrograms::compileSimpleTextureProgram() {
+    const GLchar* VERTEX_SHADER_SOURCE =
+        "#version 410 core                                      \n"
+        "#extension GL_ARB_explicit_uniform_location : require  \n"
+        "                                                       \n"
+        "layout (location = 0) in vec3 vertex_pos;              \n"
+        "layout (location = 1) in vec2 tex_pos;                 \n"
+        "                                                       \n"
+        "layout (location = 0) uniform mat4 mv_matrix;          \n"
+        "layout (location = 1) uniform mat4 proj_matrix;        \n"
+        "                                                       \n"
+        "out vec2 fs_tex_pos;                                   \n"
+        "                                                       \n"
+        "void main(void) {                                      \n"
+        "    gl_Position =                                      \n"
+        "        proj_matrix *                                  \n"
+        "        mv_matrix *                                    \n"
+        "        vec4(vertex_pos, 1);                           \n"
+        "    fs_tex_pos = tex_pos;                              \n"
+        "}                                                      \n";
+
+    const GLchar* FRAGMENT_SHADER_SOURCE =
+        "#version 410 core                           \n"
+        "                                            \n"
+        "uniform sampler2D tex_obj;                  \n"
+        "                                            \n"
+        "in vec2 fs_tex_pos;                         \n"
+        "out vec4 color;                             \n"
+        "void main(void) {                           \n"
+        "    color = texture(tex_obj, fs_tex_pos);   \n"
+        //"    color = vec4(fs_tex_pos, 0, 1);   \n"
+        //"    color = vec4(1,0,0,0.5);   \n"
+        "}                                           \n";
+
+    m_simpleTextureProg = compileProgram(
         VERTEX_SHADER_SOURCE,
         FRAGMENT_SHADER_SOURCE);
 }

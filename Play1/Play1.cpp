@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <windowsx.h>
 
+#include <gdiplus.h>
+
 #include <algorithm>
 #include <vector>
 
@@ -22,6 +24,8 @@
 #include "SwarmMember.h"
 #include "Utils.h"
 #include "FrameRateCounter.h"
+
+#include "BorgCube.h"
 
 // Windows globals, defines, and prototypes
 WCHAR szAppName[] = L"Play1";
@@ -61,6 +65,8 @@ OriginDot g_originDot;
 DrawnSwarm g_drawnSwarm(GRID_WIDTH, GRID_HEIGHT, SWARM_SIZE);
 AxisDisplay g_axisDisplay;
 
+BorgCube g_borgCube;
+
 const UINT_PTR DRAW_TIMER_ID = 1;
 
 Camera g_camera(
@@ -79,6 +85,8 @@ bool g_shiftPressed = false;
 bool g_paused = false;
 
 const bool CREATE_CONSOLE = true;
+
+ULONG_PTR g_gdiplusToken;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     MSG msg;
@@ -99,6 +107,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if (!::RegisterClass(&wndclass)) {
         return FALSE;
     }
+
+    if (CREATE_CONSOLE) {
+        ::AllocConsole();
+        freopen("conin$", "r", stdin);
+        freopen("conout$", "w", stdout);
+        freopen("conout$", "w", stderr);
+    }
+
+    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+    Gdiplus::GdiplusStartup(&g_gdiplusToken, &gdiplusStartupInput, nullptr);
 
     // Create the frame
     ghWnd = ::CreateWindow(szAppName,
@@ -122,13 +140,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ::ShowWindow(ghWnd, nCmdShow);
 
     ::UpdateWindow(ghWnd);
-
-    if (CREATE_CONSOLE) {
-        ::AllocConsole();
-        freopen("conin$", "r", stdin);
-        freopen("conout$", "w", stdout);
-        freopen("conout$", "w", stderr);
-    }
 
     while (::GetMessage(&msg, NULL, 0, 0)) {
         ::TranslateMessage(&msg);
@@ -326,8 +337,11 @@ void doCleanup(HWND hWnd) {
     g_originDot.cleanup();
     g_drawnSwarm.cleanup();
     g_axisDisplay.cleanup();
+    g_borgCube.cleanup();
 
     g_programs.cleanupPrograms();
+
+    Gdiplus::GdiplusShutdown(g_gdiplusToken);
 
     if (ghRC) {
         wglDeleteContext(ghRC);
@@ -463,11 +477,19 @@ void setupData(int width, int height) {
 
     g_axisDisplay.setProgram(g_programs.get2dProg());
     g_axisDisplay.setup();
+
+    g_borgCube.setProgram(g_programs.getSimpleTextureProg());
+    g_borgCube.setup();
 }
 
 unsigned int g_lastFrameRatePrintTime = 0;
 void drawScene(int width, int height) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearDepth(-1000000);
+    glDepthMask(true);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_GREATER);
 
     //vec4df::Vec4Df v = vec4df::create(400, 400, 0, 1);
     //vec4df::Vec4Df mv = mat4df::mul(g_modelView, v);
@@ -476,6 +498,10 @@ void drawScene(int width, int height) {
     g_drawnGrid.draw(g_modelView, g_projection);
     g_originDot.draw(g_modelView, g_projection);
     g_drawnSwarm.draw(g_modelView, g_projection);
+    g_borgCube.draw(g_modelView, g_projection);
+
+    glDisable(GL_DEPTH_TEST);
+
     g_axisDisplay.draw(width, height, g_camera);
 
     DWORD currentTime = timeGetTime();
@@ -484,6 +510,7 @@ void drawScene(int width, int height) {
         printf("fps: %f\n", frameRate);
         g_lastFrameRatePrintTime = currentTime;
     }
+
 
     ::SwapBuffers(ghDC);
 }

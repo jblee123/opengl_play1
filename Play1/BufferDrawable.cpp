@@ -37,6 +37,16 @@ void BufferDrawable::pushCoord4d(float x, float y, std::vector<GLfloat>& coords)
     pushCoord4d(x, y, 0, coords);
 }
 
+void BufferDrawable::pushCoord3d(float x, float y, float z, std::vector<GLfloat>& coords) {
+    coords.push_back(x);
+    coords.push_back(y);
+    coords.push_back(z);
+}
+
+void BufferDrawable::pushCoord3d(float x, float y, std::vector<GLfloat>& coords) {
+    pushCoord3d(x, y, 0, coords);
+}
+
 void BufferDrawable::pushCoord2d(float x, float y, std::vector<GLfloat>& coords) {
     coords.push_back(x);
     coords.push_back(y);

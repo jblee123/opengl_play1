@@ -18,6 +18,8 @@ public:
 protected:
     void pushCoord4d(float x, float y, float z, std::vector<GLfloat>& coords);
     void pushCoord4d(float x, float y, std::vector<GLfloat>& coords);
+    void pushCoord3d(float x, float y, float z, std::vector<GLfloat>& coords);
+    void pushCoord3d(float x, float y, std::vector<GLfloat>& coords);
     void pushCoord2d(float x, float y, std::vector<GLfloat>& coords);
 
     GLuint m_program;
