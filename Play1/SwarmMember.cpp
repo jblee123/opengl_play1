@@ -20,6 +20,7 @@ Position SwarmMember::getPos() const {
 }
 
 Position SwarmMember::getPosForAnimation(DWORD time) const {
+    time %= 10000000;
     float newHeading = fmod(time / 1000.f, (float)(2.0 * PI));
     newHeading += m_pos.getHeading();
     vec3df::Vec3Df offset = vec3df::create(50, 0, 0);
